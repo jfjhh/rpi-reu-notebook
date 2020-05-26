@@ -1,0 +1,156 @@
+\documentclass[12pt]{article}
+
+% Core packages
+\usepackage[intlimits]{mathtools} % Load before newtxmath
+\mathtoolsset{%
+  mathic,
+}
+\usepackage{amssymb}
+\usepackage{physics}
+\usepackage{siunitx}
+
+% Layout and styling
+\usepackage[final]{microtype}
+\usepackage{setspace} 
+\usepackage{booktabs}
+
+\usepackage{amsthm}
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}{Lemma}
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}
+\newtheorem{post}{Postulate}
+
+\setlength{\parskip}{0pt}
+
+% Graphics
+\usepackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{tikz}
+
+% Fonts
+\usepackage{fontspec}
+% \usepackage[semibold,osf]{libertine}
+% \usepackage{newpxtext}
+% \usepackage{garamondx}
+% \setmainfont[Numbers={Lining,OldStyle},Ligatures=Historic]{Cardo}
+\setmainfont[%
+Numbers={Lining,OldStyle},
+]{Linux Libertine}
+\usepackage{realscripts}
+\usepackage[libertine,vvarbb]{newtxmath}
+\usepackage[scr=boondoxo,cal=esstix]{mathalfa}
+\usepackage{bm} % Load after math font configuration
+\renewcommand\mathrm\textnormal%
+\setmonofont[Scale=MatchLowercase]{Inconsolata}
+
+% Code highlighting
+\usepackage{minted}
+\setminted{%
+  mathescape,
+  linenos,
+  breaklines,
+}
+\setminted{style=friendly}
+\setminted[wolfram]{style=mathematica}
+
+% Other
+\usepackage{lipsum}
+
+% Reference management (order-sensitive)
+\usepackage[pdfusetitle,final]{hyperref}
+\usepackage[all]{hypcap}
+\usepackage[nameinlink]{cleveref}
+\crefdefaultlabelformat{#2{\scshape #1}#3}
+
+% Cleverref labels in small caps
+\ExplSyntaxOn\makeatletter
+\seq_new:N \l_jcb_counter_seq 
+\newcommand{\addcountertoseq}[1]{%
+  \seq_set_from_clist:Nn \l_jcb_counter_seq {#1}
+}
+\newcommand{\switchtosmallcapsformat}{%
+  \seq_map_inline:Nn \l_jcb_counter_seq {%
+    \crefformat{##1}{####2{\protect\scshape\use:c{cref@##1@name}\ ####1}####3}
+    \Crefformat{##1}{####2{\protect\scshape\use:c{Cref@##1@name}\ ####1}####3}
+  }%
+}
+\ExplSyntaxOff%
+\makeatother
+\addcountertoseq{section,subsection,subsubsection,part,figure,table,page,equation}
+\switchtosmallcapsformat%
+
+\usepackage{autonum}
+\hypersetup{%
+  colorlinks,
+  allcolors=MidnightBlue,
+  linkcolor=black,
+  citecolor=OliveGreen,
+}
+\urlstyle{same}
+
+\usepackage{subfiles}
+
+
+% Resources
+\graphicspath{{figs/}}
+
+
+% Math commands
+% Subscript text
+\newcommand*\sub[1]{\textit{#1}}
+
+% Variant symbols
+\renewcommand\leq\leqslant%
+\renewcommand\geq\geqslant%
+\renewcommand\phi\varphi%
+\renewcommand\epsilon\varepsilon%
+
+% Common algebraic objects
+\newcommand\ZZ{\mathbb{Z}}
+\newcommand\QQ{\mathbb{Q}}
+\newcommand\CC{\mathbb{C}}
+\newcommand\RR{\mathbb{R}}
+
+% Named operations and special constants
+\newcommand\im{\mathrm{i}\mkern1mu}
+\renewcommand\ln{\operatorname{\mathrm{ln}}}
+\renewcommand\log{\operatorname{\mathrm{log}}}
+\renewcommand\exp{\operatorname{\mathrm{exp}}}
+\renewcommand\tr{\operatorname{\mathrm{tr}}}
+\renewcommand\det{\operatorname{\mathrm{det}}}
+
+% Operators
+\newcommand\tp\otimes%
+\newcommand{\opr}[1]{\mathsf{#1}}%
+\newcommand\idsopr{\mathbb{1}}
+\newcommand\idopr{\opr{I}}
+\newcommand\sopr\mathcal%
+
+% Categories
+\newcommand\cat\mathsf%
+
+% Quantum mechanics
+\newcommand\hilb{\mathcal{H}}
+\newcommand\liou{\mathcal{L}}
+\newcommand\ham{\opr{H}}
+\newcommand\dop{\opr{ρ}}
+\newcommand\ensavg[2][\dop]{\ev{#2}_{\mkern-1.5mu{#1}}}
+\newcommand\sensavg[2][\dop]{\ev*{#2}_{\mkern-1.5mu{#1}}}
+
+\title{Rensselaer 2020 REU Notebook}
+\author{Alex Striff}
+\date{May to July 2020}
+
+\begin{document}
+\maketitle
+% \tableofcontents
+% \listoffigures
+% \listoftables
+
+\subfile{entries/first}
+\subfile{entries/second}
+
+\end{document}
+
