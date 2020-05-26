@@ -14,6 +14,15 @@
 \usepackage{setspace} 
 \usepackage{booktabs}
 
+\usepackage{marginnote}
+\reversemarginpar%
+\newcommand{\nbdate}[1]{\marginnote{\normalsize\rm\textit{#1}}}
+\newcommand{\nbentry}[2]{%
+\protect\section*{#2}
+\addcontentsline{toc}{section}{#2 (#1)}
+\nbdate{#1}
+}
+
 \usepackage{amsthm}
 \theoremstyle{plain}
 \newtheorem{thm}{Theorem}[section]
@@ -21,8 +30,6 @@
 \theoremstyle{definition}
 \newtheorem{defn}{Definition}
 \newtheorem{post}{Postulate}
-
-\setlength{\parskip}{0pt}
 
 % Graphics
 \usepackage{graphicx}
@@ -145,7 +152,7 @@ Numbers={Lining,OldStyle},
 
 \begin{document}
 \maketitle
-% \tableofcontents
+\tableofcontents
 % \listoffigures
 % \listoftables
 
