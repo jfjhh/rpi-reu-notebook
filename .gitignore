@@ -8,8 +8,9 @@
 *.toc
 *.lof
 *.lot
+*.xdv
 *-blx.bib
-*.synctex.gz
+*.synctex*
 _minted*
 *.ipynb_checkpoints
 entries/*.pdf

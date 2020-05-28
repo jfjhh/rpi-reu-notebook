@@ -32,7 +32,8 @@
 \newtheorem{post}{Postulate}
 
 % Graphics
-\usepackage{graphicx}
+\usepackage[Export]{adjustbox} % Note capital Export. Loads graphicx.
+\adjustboxset{max size={\linewidth}{0.9\textheight}, center}
 \usepackage[usenames,dvipsnames]{xcolor}
 \usepackage{tikz}
 
@@ -58,6 +59,7 @@ Numbers={Lining,OldStyle},
   mathescape,
   linenos,
   breaklines,
+  fontsize=\footnotesize,
 }
 \setminted{style=friendly}
 \setminted[wolfram]{style=mathematica}
@@ -156,8 +158,8 @@ Numbers={Lining,OldStyle},
 % \listoffigures
 % \listoftables
 
-\subfile{entries/first}
-\subfile{entries/second}
+\subfile{entries/project}
+\input{entries/numentries.txt}
 
 \end{document}
 
