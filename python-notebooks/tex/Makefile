@@ -4,7 +4,7 @@ ENTRIES = $(basename $(wildcard *.tex))
 all: notebook
 
 .PHONY: notebook
-notebook:
+notebook: entries
 
 .PHONY: entries
 entries: $(addsuffix .pdf, $(ENTRIES))

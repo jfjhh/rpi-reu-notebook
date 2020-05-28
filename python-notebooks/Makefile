@@ -11,13 +11,21 @@ DISTCLEANDIRS = $(SUBDIRS:%=distclean-%)
 NOTEBOOKS=$(basename $(wildcard *.ipynb))
 
 .PHONY: all
-all: notebook
+all: $(SUBDIRS) notebook
+
+.PHONY: edits
+edits: # Convenience
+	jupyter notebook
+
+.PHONY: subdirs $(SUBDIRS)
+$(SUBDIRS): notebook
+	$(MAKE) -C $@
 
 .PHONY: notebook
-notebook: sources tex
+notebook: gensrc gentex
 
-.PHONY: sources
-sources: $(NOTEBOOKS:%=src/%.py)
+.PHONY: gensrc
+gensrc: $(NOTEBOOKS:%=src/%.py)
 
 src/%.py: %.ipynb
 	$(NBC) \
@@ -25,8 +33,8 @@ src/%.py: %.ipynb
 		--output-dir=$(PYDIR) \
 		$<
 
-.PHONY: tex
-tex: $(NOTEBOOKS:%=tex/%.tex)
+.PHONY: gentex
+gentex: $(NOTEBOOKS:%=tex/%.tex)
 
 tex/%.tex: %.ipynb
 	$(NBC) \

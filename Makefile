@@ -24,7 +24,6 @@ clean: $(CLEANDIRS)
 
 .PHONY: distclean
 distclean: clean $(DISTCLEANDIRS)
-	rm -fv $(MAIN).pdf
 
 .PHONY: subdirs $(DISTCLEANDIRS)
 $(DISTCLEANDIRS):
