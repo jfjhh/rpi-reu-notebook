@@ -6,9 +6,9 @@ notebook:
 
 .PHONY: clean
 clean:
+	rm -fv *.py
 
 .PHONY: distclean
 distclean: clean
 	rm -rfv __pycache__
-	rm -fv *.py
 

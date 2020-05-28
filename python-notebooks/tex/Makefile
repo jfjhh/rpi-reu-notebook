@@ -18,12 +18,12 @@ clean:
 		| grep '.tex$$' \
 		&& latexmk -c \
 		|| true
+	rm -fv *.tex
 	rm -fv *.xdv
 	rm -rfv _minted-*
 
 .PHONY: distclean
 distclean: clean
 	rm -rfv *_files
-	rm -fv *.tex
 	rm -fv *.pdf
 

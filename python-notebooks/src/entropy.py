@@ -3,9 +3,6 @@
 
 # # Intensity-level (monkey) entropy
 
-# In[1]:
-
-
 from PIL import Image, ImageFilter, ImageOps
 import numpy as np
 import numpy.linalg as linalg
@@ -18,9 +15,6 @@ import matplotlib.pyplot as plt
 # $$
 # The *intensity-level entropy* is the Shannon entropy of the empirical distribution of intensity values.
 
-# In[2]:
-
-
 def shannon_entropy(h):
     """The Shannon entropy in bits"""
     return -sum(p*np.log2(p) if p > 0 else 0 for p in h)
@@ -28,9 +22,6 @@ def shannon_entropy(h):
 def intensity_entropy(data):
     hist, _ = np.histogram(data, bins=range(256+1), density=True)
     return shannon_entropy(hist)
-
-
-# In[3]:
 
 
 def uniform(n):
@@ -44,25 +35,16 @@ def rescale(data):
 
 # ## Natural image
 
-# In[4]:
-
-
 img = ImageOps.grayscale(Image.open('test.jpg'))
 scale = max(np.shape(img))
 data = np.array(img)
 img
 
 
-# In[5]:
-
-
 intensity_entropy(img)
 
 
 # The problem with the intensity entropy is that it is usually near maximum (8 bits for these grayscale images).
-
-# In[6]:
-
 
 def intensity_blur(img, scales, display=True):
     scale = max(np.shape(img))
@@ -85,9 +67,6 @@ def intensity_blur(img, scales, display=True):
     return results
 
 
-# In[7]:
-
-
 results = intensity_blur(img, np.linspace(0, 1.5, num=50), False)
 
 plt.plot(*np.transpose(results), 'o-')
@@ -96,14 +75,8 @@ plt.xlabel = "Smoothing"
 plt.ylabel = "Intensity Entropy (bits)"
 
 
-# In[8]:
-
-
 rimgs = [img for _, img, _, _ in intensity_blur(img, [0, 0.01, 0.05, 0.125, 0.25, 0.5])]
 plt.show()
-
-
-# In[9]:
 
 
 _, axarr = plt.subplots(1, len(rimgs))
@@ -114,9 +87,6 @@ plt.show()
 
 # ## Random pixel values
 
-# In[10]:
-
-
 rsize = 250
 randimg = Image.fromarray((256*np.random.rand(*2*[rsize])).astype('uint8'))
 randimg
@@ -124,9 +94,6 @@ randimg
 
 # ### Beware: GIGO
 # The boundary effects and discrete kernel of `ImageFilter.GaussianBlur` renders the data unreliable after the "minimum" of the intensity entropy with smoothing. This is immediately clear after even small smoothing for random pixel values, since there are no spatial correlations.
-
-# In[11]:
-
 
 results = intensity_blur(randimg, np.linspace(0, 0.3, num=75), False)
 
@@ -136,19 +103,10 @@ plt.xlabel = "Smoothing"
 plt.ylabel = "Intensity Entropy (bits)"
 
 
-# In[12]:
-
-
 rimgs = [img for _, img, _, _ in intensity_blur(randimg, [0.01, 0.05, 0.25])]
 
 
-# In[13]:
-
-
 plt.show()
-
-
-# In[14]:
 
 
 _, axarr = plt.subplots(1, len(rimgs))
@@ -163,16 +121,10 @@ plt.show()
 
 # Is composing $n$ Gaussian blurs with variance $\sigma^2$ the same as doing one with variance $n\sigma^2$ (considering the boundary effects and discrete kernel)?
 
-# In[15]:
-
-
 nsmooths = 10
 cimg = img
 oneimg = cimg.filter(ImageFilter.GaussianBlur(np.sqrt(nsmooths)*2))
 oneimg
-
-
-# In[16]:
 
 
 nimg = cimg
@@ -185,13 +137,7 @@ nimg
 
 # The differences between results at different scales can be pretty wack.
 
-# In[17]:
-
-
 Image.fromarray((255*rescale(np.array(nimg) - np.array(oneimg))).astype('uint8'))
-
-
-# In[18]:
 
 
 smimg = img

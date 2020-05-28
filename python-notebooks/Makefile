@@ -30,6 +30,7 @@ gensrc: $(NOTEBOOKS:%=src/%.py)
 src/%.py: %.ipynb
 	$(NBC) \
 		--to python \
+		--no-prompt \
 		--output-dir=$(PYDIR) \
 		$<
 
