@@ -13,14 +13,14 @@
 \usepackage[final]{microtype}
 \usepackage{setspace} 
 \usepackage{booktabs}
+\usepackage[toc]{appendix}
 
 \usepackage{marginnote}
 \reversemarginpar%
 \newcommand{\nbdate}[1]{\marginnote{\normalsize\rm\textit{#1}}}
 \newcommand{\nbentry}[2]{%
-\protect\section*{#2}
-\addcontentsline{toc}{section}{#2 (#1)}
-\nbdate{#1}
+  \protect\section[#2 (#1)]{#2}
+  \nbdate{#1}
 }
 
 \usepackage{amsthm}
@@ -29,6 +29,7 @@
 \newtheorem{lem}{Lemma}
 \theoremstyle{definition}
 \newtheorem{defn}{Definition}
+\newtheorem{eg}{Example}
 \newtheorem{post}{Postulate}
 
 % Graphics
@@ -51,7 +52,7 @@ Numbers={Lining,OldStyle},
 \usepackage[scr=boondoxo,cal=esstix]{mathalfa}
 \usepackage{bm} % Load after math font configuration
 \renewcommand\mathrm\textnormal%
-\setmonofont[Scale=MatchLowercase]{Inconsolata}
+\setmonofont[Scale=MatchLowercase]{Iosevka}
 
 % Code highlighting
 \usepackage{minted}
@@ -124,6 +125,9 @@ Numbers={Lining,OldStyle},
 
 % Named operations and special constants
 \newcommand\im{\mathrm{i}\mkern1mu}
+\newcommand\img{\operatorname{\mathrm{im}}}
+\newcommand\dom{\operatorname{\mathrm{dom}}}
+\newcommand\cod{\operatorname{\mathrm{cod}}}
 \renewcommand\ln{\operatorname{\mathrm{ln}}}
 \renewcommand\log{\operatorname{\mathrm{log}}}
 \renewcommand\exp{\operatorname{\mathrm{exp}}}
@@ -136,9 +140,18 @@ Numbers={Lining,OldStyle},
 \newcommand\idsopr{\mathbb{1}}
 \newcommand\idopr{\opr{I}}
 \newcommand\sopr\mathcal%
+\newcommand{\conv}[2]{#1 \mathbin{*} #2}
 
 % Categories
 \newcommand\cat\mathsf%
+
+% Spaces
+\newcommand\images{\mathsf{Img}}%
+\newcommand\lists{\mathsf{List}}%
+
+% Sets
+\newcommand\union\bigcup%
+\newcommand\intersection\bigcap%
 
 % Quantum mechanics
 \newcommand\hilb{\mathcal{H}}
@@ -147,6 +160,12 @@ Numbers={Lining,OldStyle},
 \newcommand\dop{\opr{ρ}}
 \newcommand\ensavg[2][\dop]{\ev{#2}_{\mkern-1.5mu{#1}}}
 \newcommand\sensavg[2][\dop]{\ev*{#2}_{\mkern-1.5mu{#1}}}
+
+% Abbreviations and stylized words (like \LaTeX)
+\newcommand{\pdf}{\textsc{pdf}}
+\newcommand{\Pdf}{\textsc{Pdf}}
+\newcommand{\cdf}{\textsc{cdf}}
+\newcommand{\Cdf}{\textsc{Cdf}}
 
 \title{Rensselaer 2020 REU Notebook}
 \author{Alex Striff}
@@ -160,6 +179,8 @@ Numbers={Lining,OldStyle},
 
 \subfile{entries/project}
 \input{entries/numentries.txt}
+\appendix
+\subfile{entries/math}
 
 \end{document}
 

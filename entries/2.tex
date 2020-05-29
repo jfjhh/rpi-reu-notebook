@@ -1,0 +1,77 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\begin{document}
+\nbentry{May 28, 2020}{%
+  Local metrics
+}
+
+Given an image $I:X \times Y \to \ZZ_n$, we will now consider \emph{local
+metrics} for the information it contains.
+
+I want to be careful in understanding the statistical assumptions I am making,
+so I'll try to be explicit about distinguishing true distributions from
+empirical distributions, and how the assumptions behind postulating the
+existence of empirical distributions relate to the actual calculation being
+done. This should also aid in learning more solid probability theory.
+
+\subsection{Induced metrics}
+
+\begin{defn}[Image distributions]
+  An \emph{image distribution} is a map $D$ that takes an image $I$ and produces
+  a random variable $D(I):\Omega \to E$.
+
+  We are constructing empirical distributions from image data according to some
+  map $M:\images \to \lists(\Omega)$, which produces the list of values $V =
+  M(I)$. Then the probability of $D(I)$ taking a value in a subset $S \subseteq
+  E$ is
+  \[
+    P(X \in S)
+    = \frac{1}{\abs{V}}\sum_{s \in S} \abs{V^{-1}(\{s\})}.
+  \]
+\end{defn}
+
+\begin{eg}
+  The intensity-level entropy is a function of the \emph{nonnegative} random
+  variable from the image distribution of intensity values. That is, the map $M$
+  takes an image and returns the list of its intensity values.
+\end{eg}
+
+\begin{defn}[Induced image distributions]
+  Given an image distribution $D$, and a subset $S \subseteq \dom I$, we
+  construct the \emph{induced image distribution} $D|_S$ by
+  \begin{equation}
+    D|_S(I)
+    = D(I|_S).
+    \label{eq:inddist}
+  \end{equation}
+\end{defn}
+
+\begin{defn}[Induced random variable]
+  Given an image $I$, an image distribution $D$ and collection of subsets
+  $\{S_i\}$ of $\dom I$, a function $H$ admits the random variables
+  \[
+    H_i
+    = (H \circ D|_{S_i})(I)
+  \]
+\end{defn}
+
+\begin{defn}
+  The \emph{$r$-box} at $(x,\, y)$ is $B_r(x,\, y) = [x - r,\, x + r]
+  \times [y - r,\, y + r]$. 
+\end{defn}
+
+Given two real random variables $A$ and $B$ with joint \pdf\ $f_{A,B}(a,\, b)$,
+the \pdf\ of their sum is
+\begin{equation}
+  f_{A+B}(c)
+  = \int_{-\infty}^\infty \dd{a} f_{A,B}(a,\, a-c)
+  = \int_{-\infty}^\infty \dd{b} f_{A,B}(b-c,\, b).
+  \label{eq:sumpdf}
+\end{equation}
+For independent $A$ and $B$, \cref{eq:sumpdf} reduces to $f_{A+B} =
+\conv{f_A}{f_B}$ over the marginals.
+
+\subfile{../python-notebooks/tex/kernels}
+\subfile{../python-notebooks/tex/boxcar_entropy}
+
+\end{document}

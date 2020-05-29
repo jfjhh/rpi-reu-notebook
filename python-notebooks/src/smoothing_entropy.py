@@ -1,36 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Intensity-level (monkey) entropy
+# # Effect of smoothing on intensity-level entropy
 
-from PIL import Image, ImageFilter, ImageOps
 import numpy as np
 import numpy.linalg as linalg
 import matplotlib.pyplot as plt
-
-
-# Given a discrete random variable $X$ on a probability space $(\Omega, \mathcal{F}, P)$ with image $\chi = \mathrm{im}(X)$, the *Shannon entropy* is
-# $$
-# H = \sum_{x \in \chi} -P(x) \ln P(x).
-# $$
-# The *intensity-level entropy* is the Shannon entropy of the empirical distribution of intensity values.
-
-def shannon_entropy(h):
-    """The Shannon entropy in bits"""
-    return -sum(p*np.log2(p) if p > 0 else 0 for p in h)
-
-def intensity_entropy(data):
-    hist, _ = np.histogram(data, bins=range(256+1), density=True)
-    return shannon_entropy(hist)
-
-
-def uniform(n):
-    return np.array([1] * n) / n
-
-def rescale(data):
-    b = np.max(data)
-    a = np.min(data)
-    return (b - data) / (b - a)
+from PIL import Image, ImageFilter, ImageOps
+from src.utilities import *
+from src.intensity_entropy import *
 
 
 # ## Natural image

@@ -1,9 +1,10 @@
 INCFILE = numentries.txt
-ENTRIES = $(basename $(wildcard *.tex))
+TEXFILES = $(wildcard *.tex)
+ENTRIES = $(basename $(TEXFILES))
 
 all: $(INCFILE)
 
-$(INCFILE):
+$(INCFILE): $(TEXFILES)
 	ls *.tex \
 		| grep -e '^[0-9]\+' \
 		| sort -n \
