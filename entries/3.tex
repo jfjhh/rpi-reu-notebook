@@ -1,0 +1,55 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\begin{document}
+\nbentry{May 29, 2020}{%
+  Fractal dimensions
+}
+
+The previous results hint at characterizing the growth of the intensity entropy
+with different discretizations.
+
+\begin{defn}
+  The \emph{R\'enyi entropy of order $\alpha \ge 0$} of a discrete random
+  variable $X$ with support $\chi$ is
+  \begin{equation}
+    H_\alpha(X)
+    = \frac{1}{1 - \alpha}\log\sum_{x \in \chi} {P(x)}^\alpha
+    = \frac{\alpha}{1 - \alpha}\log\norm{P}_\alpha,
+    \label{eq:renyi}
+  \end{equation}
+  where $\norm{P}_\alpha$ denotes the $\alpha$-norm of the vector of probability
+  values. The limit $\alpha \to 1$ reproduces the Shannon entropy.
+\end{defn}
+
+\begin{defn}
+  Given a real random variable $X$, define a discretized random variable
+  \[
+    \ev{X}_\epsilon
+    = \frac{\lfloor\epsilon X\rfloor}{\epsilon}.
+  \]
+  Then the \emph{generalized dimension} of $X$ is
+  \begin{equation}
+    d_\alpha(X)
+    = \lim_{\epsilon \to 0} \frac{H_\alpha(\ev{X}_\epsilon)}{\log \epsilon}
+    = \lim_{\epsilon \to 0} \frac{\alpha}{1 - \alpha}
+    \log\qty(\norm{\ev{X}_\epsilon}_\alpha - \epsilon).
+    \label{eq:gendim}
+  \end{equation}
+  The case $\alpha \to 1$ is the \emph{information dimension} of $X$. The
+  generalized dimension may be estimated from linear regression with dependent
+  $\epsilon$ on the line
+  \[
+    \norm{\ev{X}_\epsilon}_\alpha
+    = \exp\qty(\frac{\alpha}{\alpha - 1})e^d + \epsilon
+    \equiv \eta + \epsilon.
+  \]
+  Given the intercept $\eta$, the generalized dimension is estimated as
+  \begin{equation}
+    \hat{d}_\alpha(X)
+    = \ln\eta + \frac{\alpha}{1 - \alpha}.
+    \label{eq:gendim-est}
+  \end{equation}
+\end{defn}
+
+\end{document}
+
