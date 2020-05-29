@@ -65,3 +65,13 @@ plt.imshow(mapbox(2, lambda I: intensity_expected(lambda p: -1 + 1/p if p > 0 el
 
 plt.imshow(mapbox(2, lambda I: intensity_expected(lambda p: -(1+p), I), np.array(img)));
 
+
+# ## Intensity entropy on disjoint blocks
+
+plt.imshow(mapblocks(100, 100, intensity_entropy, np.array(img)),
+           aspect=np.divide(*np.shape(img)));
+
+
+plt.imshow(mapblocks(25, 25, intensity_entropy, np.array(img)),
+           aspect=np.divide(*np.shape(img)));
+

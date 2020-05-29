@@ -16,3 +16,7 @@ def mapboxes(rs, f, a):
 def mapallboxes(f, a):
     return mapboxes(range(max(np.shape(a))), f, a)
 
+def mapblocks(h, w, f, a):
+    return np.array([[f(y) for y in np.array_split(x, w, axis=1)]
+                     for x in np.array_split(a, h)])
+
