@@ -16,6 +16,15 @@ done. This should also aid in learning more solid probability theory.
 
 \subsection{Induced metrics}
 
+\begin{defn}[Lists]\label{def:lists}
+  Given a set $S$, the collection of lists of elements from $S$ is
+  \[
+    \lists(S)
+    = \union_{n \in \ZZ_{\ge 0}} S^n,
+  \]
+  where a list (tuple) $s \in S^n$ is a map $s:\ZZ_n \to S$ and $\abs{s} = n$.
+\end{defn}
+
 \begin{defn}[Image distributions]
   An \emph{image distribution} is a map $D$ that takes an image $I$ and produces
   a random variable $D(I):\Omega \to E$.

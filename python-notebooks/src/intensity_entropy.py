@@ -16,13 +16,16 @@ def shannon_entropy(h):
     """The Shannon entropy in bits"""
     return -sum(p*np.log2(p) if p > 0 else 0 for p in h)
 
+def intensity_distribution(data):
+    """The intensity distribution of 8-bit `data`."""
+    hist, _ = np.histogram(data, bins=range(256+1), density=True)
+    return hist
+
 def intensity_entropy(data):
     """The intensity-level entropy of 8-bit image data"""
-    hist, _ = np.histogram(data, bins=range(256+1), density=True)
-    return shannon_entropy(hist)
+    return shannon_entropy(intensity_distribution(data))
 
 def intensity_expected(f, data):
     """The intensity-distribution expected value of `f`."""
-    hist, _ = np.histogram(data, bins=range(256+1), density=True)
-    return sum(p*f(p) for p in hist)
+    return sum(p*f(p) for p in intensity_distribution(data))
 

@@ -36,20 +36,11 @@ with different discretizations.
     \label{eq:gendim}
   \end{equation}
   The case $\alpha \to 1$ is the \emph{information dimension} of $X$. The
-  generalized dimension may be estimated from linear regression with dependent
-  $\epsilon$ on the line
-  \[
-    \norm{\ev{X}_\epsilon}_\alpha
-    = \exp\qty(\frac{\alpha}{\alpha - 1})e^d + \epsilon
-    \equiv \eta + \epsilon.
-  \]
-  Given the intercept $\eta$, the generalized dimension is estimated as
-  \begin{equation}
-    \hat{d}_\alpha(X)
-    = \ln\eta + \frac{\alpha}{1 - \alpha}.
-    \label{eq:gendim-est}
-  \end{equation}
+  generalized dimension may be estimated from linear regression of
+  $H_\alpha(\ev{X}_\epsilon)$ with $\log\epsilon$ as the independent variable.
 \end{defn}
+
+\subfile{../python-notebooks/tex/fractals}
 
 \end{document}
 
