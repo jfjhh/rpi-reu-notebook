@@ -3,9 +3,9 @@
 
 # # Intensity-level entropy
 
-# Given a discrete random variable $X$ on a probability space $(\Omega, \mathcal{F}, P)$ with image $\chi = \mathrm{im}(X)$, the *Shannon entropy* is
+# Given a discrete random variable $X$ with support $\mathcal{X}$, the *Shannon entropy* is
 # $$
-# H = \sum_{x \in \chi} -P(x) \ln P(x).
+# H = \sum_{x \in \mathcal{X}} -P(x) \ln P(x).
 # $$
 # The *intensity-level entropy* is the Shannon entropy of the empirical distribution of intensity values.
 

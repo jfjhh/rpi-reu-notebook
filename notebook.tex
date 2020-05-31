@@ -49,7 +49,7 @@ Numbers={Lining,OldStyle},
 ]{Linux Libertine}
 \usepackage{realscripts}
 \usepackage[libertine,vvarbb]{newtxmath}
-\usepackage[scr=boondoxo,cal=esstix]{mathalfa}
+\usepackage[scr=esstix,cal=boondoxo]{mathalfa}
 \usepackage{bm} % Load after math font configuration
 \renewcommand\mathrm\textnormal%
 \setmonofont[Scale=MatchLowercase]{Iosevka}
@@ -142,6 +142,9 @@ Numbers={Lining,OldStyle},
 \newcommand\sopr\mathcal%
 \newcommand{\conv}[2]{#1 \mathbin{*} #2}
 
+% Probability and statistics
+\newcommand\gv{\mathbin{|}}
+
 % Categories
 \newcommand\cat\mathsf%
 
@@ -166,6 +169,8 @@ Numbers={Lining,OldStyle},
 \newcommand{\Pdf}{\textsc{Pdf}}
 \newcommand{\cdf}{\textsc{cdf}}
 \newcommand{\Cdf}{\textsc{Cdf}}
+\newcommand{\iid}{\textsc{iid}}
+\newcommand{\Iid}{\textsc{Iid}}
 
 \title{Rensselaer 2020 REU Notebook}
 \author{Alex Striff}

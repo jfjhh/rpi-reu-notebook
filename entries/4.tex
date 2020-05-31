@@ -1,0 +1,58 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\begin{document}
+\nbentry{May 30, 2020}{%
+  Probability and inference
+}
+
+Let's look at a simple inference problem before considering images. This example
+illustrates how the approach founded on probability theory differs from the
+na\"{\i}ve statistical approach usually taken by physicists.
+
+\begin{eg}[Biased coin tosses]
+  Consider tossing a biased coin $N$ times to obtain $n$ heads. What is the
+  probability $p'$ that the next coin toss comes up heads?
+\end{eg}
+
+\noindent
+The temptation is to claim $n/N$ as the probability, but this is
+\emph{incorrect} if we want to allow all consistent biases. The problem with
+this solution is that the most probable bias is assumed to be the true bias.
+
+The probability of getting $m$ heads if a single head has probability $p$ is
+\[
+  P(m \gv p)
+  = \binom{N}{m} p^m {(1 - p)}^{N-m}.
+\]
+We have no other information, so we assume that all of the biases are equally
+likely. This means that $P(p)$ is constant (the uniform prior). The distribution
+of biases $p$ given the observation of $m$ heads is then
+\[
+  P(p \gv m)
+  = \frac{P(m \gv p)P(p)}{P(m)}
+  = \frac{P(m \gv p)P(p)}{%
+  \int_0^1 \dd{\tilde{p}} P(m \gv \tilde{p})P(\tilde{p})}
+  = \frac{P(m \gv p)}{\int_0^1 \dd{\tilde{p}} P(m \gv \tilde{p})}.
+\]
+We compute that
+\[
+  P(m)
+  = \binom{N}{m} \int_0^1 \dd{p} p^m {(1 - p)}^{N-m}
+  = \binom{N}{m}\frac{m! (N - m)!}{(N + 1)!}
+  = \frac{1}{N + 1},
+\]
+so the next coin toss is heads with probability
+\begin{align}
+  % P(\text{head} \gv n)
+  p'
+  &= \int_0^1 \dd{p} P(\text{head} \gv n,\, p) P(p \gv n)
+  = \int_0^1 \dd{p} p \, P(p \gv n) \\
+  &= \int_0^1 \dd{p} p (N + 1) \binom{N}{n} p^n {(1 - p)}^{N - n}
+  = \frac{n+1}{N+2}.
+\end{align}
+For $n = 3$ and $N = 10$, $p' = 0.33$. This is a more conservative estimate than
+$p' = 0.30$ from the most probable bias.
+
+\end{document}
+
+

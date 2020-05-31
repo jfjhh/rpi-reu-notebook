@@ -91,3 +91,6 @@ infodim(dist)
 dist = intensity_distribution(img)
 plt.plot(dist);
 
+
+plt.plot(np.sort(data.flatten()))
+
