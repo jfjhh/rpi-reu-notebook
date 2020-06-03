@@ -17,7 +17,7 @@ import time
 
 
 # ## Standard Ising (on a torus)
-# In grayscale for fun
+# In grayscale for fun.
 
 def neighbors(a, i, j):
     return np.hstack([a[:,j].take([i-1,i+1], mode='wrap'),
@@ -120,6 +120,8 @@ eimg = -1 + 2 * (np.array(img) / 255)
 plt.imshow(eimg);
 
 
+# `movie.gif`: Full neighbor Ising.
+
 n = 1000000
 f = IntProgress(min=0, max=1 + (n-1) // 1000) # instantiate the bar
 display(f)
@@ -132,6 +134,8 @@ with imageio.get_writer('movie.gif', mode='I') as writer:
             frame(writer, eimg)
 plt.imshow(eimg);
 
+
+# `imovie.gif`: Normal Ising.
 
 n = 1000000
 img = eimg
@@ -180,8 +184,10 @@ initimg = eimg.copy()
 plt.imshow(initimg);
 
 
+# `emovie.gif`: Image metric Ising (with `ienergy`).
+
 n = 1000000
-f = IntProgress(min=0, max=1 + (n-1) // 1000) # instantiate the bar
+f = IntProgress(min=0, max=2 + 2*(n-1) // 1000) # instantiate the bar
 display(f)
 with imageio.get_writer('emovie.gif', mode='I') as writer:
     frame(writer, eimg)
@@ -192,10 +198,8 @@ with imageio.get_writer('emovie.gif', mode='I') as writer:
             f.value += 1
             frame(writer, eimg)
     for i in range(n):
-#         iisingstep(0.5 * (np.pi / 2) / np.arctan(n - i), eimg, initimg)
         k = i/n
         iisingstep(1e-3*(1 - k) + 4*k, eimg, initimg)
-#         iisingstep(3e-1, eimg, initimg)
         if i % 1000 == 0:
             f.value += 1
             frame(writer, eimg)
