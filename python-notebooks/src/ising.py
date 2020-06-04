@@ -233,7 +233,7 @@ with imageio.get_writer('swmovie.gif', mode='I') as writer:
 plt.imshow(eimg);
 
 
-# ### Nearest-neighbor wapping motion
+# ### Nearest-neighbor swapping motion
 
 img = Image.open("barbara.png")
 eimg = -1 + 2 * (np.array(img) / 255)
