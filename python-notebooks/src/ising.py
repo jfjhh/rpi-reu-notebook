@@ -150,10 +150,15 @@ plt.imshow(img);
 
 # ## Image-metric Ising
 
-def takewrap(a, i, j, xs=np.arange(-1, 2), ys=np.arange(-1, 2)):
+# def takewrap(a, i, j, xs=np.arange(-1, 2), ys=np.arange(-1, 2)):
+def takewrap(a, i, j, xs=np.arange(0, 1), ys=np.arange(0, 1)):
     return np.array([x for v in a.take(xs+i, axis=0, mode='wrap')
                        for x in v.take(ys+j, mode='wrap')])
 
+
+# ### Unrestricted swapping motion
+
+# Swapping preserves the intensity distribution.
 
 def sienergy(img, init, i, j):
     """Inversion-symmetric image energy"""
@@ -162,44 +167,101 @@ def sienergy(img, init, i, j):
 
 def ienergy(img, init, i, j):
     """Image energy based on 3x3 block deviation"""
-    eq = takewrap(img, i, j) == takewrap(init, i, j)
-    return -np.abs(np.sum(1*eq))
+    return np.abs(init[i, j] - img[i, j])
 
-def iisingstep(β, img, edges):
+def swisingstep(β, img, edges):
     w, h = np.shape(img)
-    i = np.random.randint(w)
-    j = np.random.randint(h)
-    E0 = ienergy(img, edges, i, j)
-    img[i, j] *= -1
-    E1 = ienergy(img, edges, i, j)
+    i0 = np.random.randint(w)
+    i1 = np.random.randint(w)
+    j0 = np.random.randint(h)
+    j1 = np.random.randint(h)
+    E0 = ienergy(img, edges, i0, j0) + ienergy(img, edges, i1, j1)
+    img[i0, j0], img[i1, j1] = img[i1, j1], img[i0, j0]
+    E1 = ienergy(img, edges, i0, j0) + ienergy(img, edges, i1, j1)
     P = np.exp(-β*(E1 - E0)) if E1 > E0 else 1
     if np.random.rand() > P: # Restore old
-        img[i, j] *= -1
+        img[i0, j0], img[i1, j1] = img[i1, j1], img[i0, j0]
+    return img
+
+def nnisingstep(β, img, edges):
+    w, h = np.shape(img)
+    i0 = np.random.randint(w)
+    i1 = int((i0 + np.sign(np.random.rand() - 1/2)) % w)
+    j0 = np.random.randint(h)
+    j1 = int((j0 + np.sign(np.random.rand() - 1/2)) % h)
+    E0 = ienergy(img, edges, i0, j0) + ienergy(img, edges, i1, j1)
+    img[i0, j0], img[i1, j1] = img[i1, j1], img[i0, j0]
+    E1 = ienergy(img, edges, i0, j0) + ienergy(img, edges, i1, j1)
+    P = np.exp(-β*(E1 - E0)) if E1 > E0 else 1
+    if np.random.rand() > P: # Restore old
+        img[i0, j0], img[i1, j1] = img[i1, j1], img[i0, j0]
     return img
 
 
-img = Image.open("ising-letters.png")
+img = Image.open("barbara.png")
 eimg = -1 + 2 * (np.array(img) / 255)
 initimg = eimg.copy()
 plt.imshow(initimg);
 
 
-# `emovie.gif`: Image metric Ising (with `ienergy`).
+# `swmovie.gif`: Image metric Ising (arbitrary swaps with `ienergy`).
 
-n = 1000000
-f = IntProgress(min=0, max=2 + 2*(n-1) // 1000) # instantiate the bar
+n = 2000000
+f = IntProgress(min=0, max=(1 + (n-1) // 1000)) # instantiate the bar
 display(f)
-with imageio.get_writer('emovie.gif', mode='I') as writer:
+with imageio.get_writer('swmovie.gif', mode='I') as writer:
     frame(writer, eimg)
     for i in range(n):
         k = i/n
-        iisingstep(4*(1 - k) + 1e-3*k, eimg, initimg)
+        swisingstep(3, eimg, initimg)
+        if i % 1000 == 0:
+            f.value += 1
+            frame(writer, eimg)
+#     for i in range(n):
+#         k = i/n
+#         swisingstep(4*(1 - k) + 1e-3*k, eimg, initimg)
+#         if i % 1000 == 0:
+#             f.value += 1
+#             frame(writer, eimg)
+#     for i in range(n):
+#         k = i/n
+#         swisingstep(1e-3*(1 - k) + 4*k, eimg, initimg)
+#         if i % 1000 == 0:
+#             f.value += 1
+#             frame(writer, eimg)
+    
+plt.imshow(eimg);
+
+
+# ### Nearest-neighbor wapping motion
+
+img = Image.open("barbara.png")
+eimg = -1 + 2 * (np.array(img) / 255)
+initimg = eimg.copy()
+plt.imshow(initimg);
+
+
+# `nnmovie.gif`: Image metric Ising (neighborly swaps with `ienergy`).
+
+n = 2000000
+f = IntProgress(min=0, max=3*(1 + (n-1) // 1000)) # instantiate the bar
+display(f)
+with imageio.get_writer('nnmovie.gif', mode='I') as writer:
+    frame(writer, eimg)
+    for i in range(n):
+        k = i/n
+        nnisingstep(5*(1 - k) + 1e-4*k, eimg, initimg)
+        if i % 1000 == 0:
+            f.value += 1
+            frame(writer, eimg)
+    for i in range(n):
+        nnisingstep(1e-4, eimg, initimg)
         if i % 1000 == 0:
             f.value += 1
             frame(writer, eimg)
     for i in range(n):
         k = i/n
-        iisingstep(1e-3*(1 - k) + 4*k, eimg, initimg)
+        nnisingstep(1e-4*(1 - k) + 5*k, eimg, initimg)
         if i % 1000 == 0:
             f.value += 1
             frame(writer, eimg)

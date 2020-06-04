@@ -1,0 +1,98 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\newcommand{\imsp}{\mathsf{Img}}
+
+\begin{document}
+\nbentry{June 3, 2020}{%
+  Statistical Mechanics of Images
+}
+
+Given the qualitative success of the image-metric based Ising images, we
+consider generalizations.
+
+\begin{defn}
+  An \emph{$N$-element image space} over metric spaces $(K, d)$ and $(P, a)$ is
+  the space $\imsp = {(P \times K)}^N$. A corresponding \emph{image} is an
+  element of $\imsp$.
+
+  The space $P$ determines the spatial arrangement of the image, and is usually
+  two-dimensional Euclidean space. We usually consider the subset of an image
+  space where the $P$-coordinates are fixed, in a grid layout. The space $K$
+  determines the qualities of an image at a point in $P$. This is usually a
+  color or intensity space, and in practical applications is a machine integer
+  like $128 \in \ZZ_8$.
+\end{defn}
+
+\begin{defn}
+  An \emph{image system} on an image space $\imsp$ consists of a \emph{ground
+  image} $I_0 \in \imsp$ and a \emph{dispersion relation} $E:\RR \to \RR$. This
+  defines the \emph{energy} of an image $I$ as
+  \[
+    E(I)
+    = \sum_{(p_0,\, k_0) \in I_0}
+    \sum_{k \in \qty{k : (p_0,\, k) \in I}}
+    E(d(k_0,\, k)).
+  \]
+\end{defn}
+
+\begin{eg}
+  For usual images in ${((\ZZ_n \times \ZZ_m) \times \ZZ_{256})}^N$, where $N =
+  nm$ and the positions of $I_0$ and $I$ coincide (indexed by $i$ and $j$), we
+  have
+  \[
+    E(I)
+    = \sum_{i = 1}^n \sum_{j = 1}^m E(d(k_0^{ij},\, k^{ij}))
+    = \sum_{i = 1}^n \sum_{j = 1}^m \epsilon\abs{k_0^{ij} - k^{ij}}^1,
+  \]
+  with typical choices of $E$ and $d$.
+\end{eg}
+
+In the binary case ($K = \ZZ_2$), we have $N$ independent two-level
+systems.
+
+\begin{eg}[Grayscale images]
+  Consider a pixel of a ground grayscale image, with integer value $k_0 \in 0,\,
+  \ldots,\, K-1$ for even $K$. There are then
+  \[
+    2g
+    = 2\begin{cases}
+      k_0, & k_0 < K/2 \\
+      K - k_0 - 1, & \text{else}
+    \end{cases}
+  \]
+  energy values that occur twice, and $K - 2g$ energy values that occur once
+  (like $\abs{x}$ on an interval like $[-3, 5]$). Thus the partition function
+  for this single pixel is
+  \begin{align}
+    \label{eq:Zpixel}
+    Z_g
+    &= \sum_{k=-g}^{K-g-1} e^{-\beta\epsilon\abs{k}}
+    = 1
+    + \sum_{k=1}^g e^{-\beta\epsilon k}
+    + \sum_{k=1}^{K-g-1} e^{-\beta\epsilon k} \\
+    &= 1
+    + \frac{e^{-\beta g\epsilon}\qty(e^{\beta g\epsilon} - 1)}{e^{\beta\epsilon} - 1}
+    + \frac{e^{-\beta (K-g-1)\epsilon}\qty(e^{\beta (K-g-1)\epsilon} -
+    1)}{e^{\beta\epsilon} - 1}
+  \end{align}
+  and the partition function for the whole image is
+  \begin{equation}
+    \label{eq:Zimage}
+    Z
+    = \prod_{g = 0}^{-1 + K/2} Z_g^{NP(g)},
+  \end{equation}
+  where $NP(g)$ is the number of pixels in the ground image with the given
+  $g$-value. We then see that
+  \[
+    \ln Z
+    = \sum_{g = 0}^{-1 + K/2} NP(g) \ln Z_g
+    = N\ev{\ln Z_g}_G,
+  \]
+  where $G$ is the random variable that takes the value $g$ with probability
+  $P(g)$. It then follows that $\ev{E/N} = \ev{E_g}_G$ and $S/N = \ev{S_g}_G$ as
+  usual for extensive variables.
+\end{eg}
+
+\end{document}
+
+
