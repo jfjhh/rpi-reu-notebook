@@ -1,0 +1,132 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\newcommand{\imsp}{\mathsf{Img}}
+
+\begin{document}
+\nbentry{June 4, 2020}{%
+  Thermodynamic quantities for images from a microscopic model
+}
+
+Since we are thinking of images as statistical entities, what is the
+corresponding microscopic model? Given such a model, what quantities do we
+consider in thermal equilibrium, and how can we understand different ensembles?
+
+\subsection{Quantum filled-site model (\textsc{fsm})}
+
+\begin{defn}[\textsc{Fsm}]
+  We define a lattice model corresponding to a \emph{ground image} $I_0$ as
+  follows. Each pixel with value $k_0 \in K \subseteq \ZZ$ in the image
+  corresponds to a \emph{site}, which is a discrete system with $K$
+  \emph{levels}. The energy of level $k$ is $E_{k_0}(k) = \epsilon\abs{k -
+    k_0}^r$.\footnote{If we want to consider colors, then $K$ is a metric space
+  and we replace $k - k_0$ with the metric.} We usually have $r = 1$ or $2$. All
+  of the image levels are occupied together by $N$ particles: \emph{pixons}
+  (bosons) or \emph{crayons} (fermions). In the ground state, particles are
+  evenly partitioned among all pixels. At each pixel, pixons will be at $k =
+  k_0$ and crayons will fill the lowest levels.
+
+  The maximum possible number of pixons at a site is $N_p = N$ and of crayons is
+  $N_c = 1$. This is abbreviated with $\sigma = p$ or $c$ as $N_\sigma$.
+  Consider (orthonormal and complete) occupation number states
+  \[
+    \ket{N_\sigma}
+    \equiv \sum_{n=0}^{N_\sigma} \ket{n}
+    \qand
+    \ket{N_\sigma}^{\otimes\abs{K}\otimes N}
+    = \bigotimes_{s = 0}^N \bigotimes_{k \in K} \ket{N_\sigma}
+  \]
+  (where order assigns occupation numbers to one-particle states), and define
+  \begin{align}
+    \ket{n_{ik},\, m_{i'k'}}
+    &\equiv \ket{N_\sigma}^{\otimes\abs{K}\otimes(i-1)} \\
+    &\otimes \ket{N_\sigma}^{\otimes(k - 1)}
+    \otimes \ket{n}
+    \otimes \ket{N_\sigma}^{\otimes(\abs{K} - k)} \\
+    &\otimes \ket{N_\sigma}^{\otimes\abs{K}\otimes(i'-i)} \\
+    &\otimes \ket{N_\sigma}^{\otimes(k' - 1)}
+    \otimes \ket{m}
+    \otimes \ket{N_\sigma}^{\otimes(\abs{K} - k')} \\
+    &\otimes \ket{N_\sigma}^{\otimes\abs{K}\otimes(N-i')}
+    \qq{(or $\ket{m_{i'k'},\, n_{ik}}$ if $i' < i$),}
+  \end{align}
+  which concentrates on the occupations of $\ket{i,\,k}$ and $\ket{i',\, k'}$.
+  We may then express the interactions between different levels with the
+  Hamiltonian
+  \[
+    \ham
+    = \sum_{i,i' \in \ZZ_N} \sum_{k,k' \in K}
+    \sum_{n=0}^{N_\sigma} \sum_{m=1}^{N_\sigma}
+    H_{ii'kk'}\op{{(n+1)}_{ik},\, {(m-1)}_{i'k'}}{n_{ik},\, m_{i'k'}},
+  \]
+where $H_{iikk} = E_{k_0}(k)$ and the other elements may be varied for different
+dynamics. The $H_{ii'kk'}$ terms describe the interaction between particles at
+site $i'$, level $k'$ with particles at site $i$, level $k$.
+\end{defn}
+
+In particular, $H_{ii'kk'} = 0$ for $n \ne n'$ corresponds to isolated sites,
+and $H_{ii'kk'} = 0$ for $k \ne k'$ corresponds to isolating levels from each
+other but not from the same level at different sites. Combining both of these
+conditions so that $H_{ii'kk'} = E_{k_0}(k)\delta_{ii'}\delta_{kk'}$ gives a
+system where all of the image occupancy states are energy eigenstates. It may be
+more clear to just consider this.
+
+Usually the interactions at site $i$ with other sites are only allowed with
+neighboring sites $\mathcal{N}_i \subseteq \ZZ_N$, so that $H_{ii'kk'} = 0$ for
+$i' \notin \mathcal{N}_i \cup \{i\}$. For simplicity we often require that the
+$H_{ii'kk'}$ are the same for $i' \in \mathcal{N}_i$.
+
+\subsection{Observables and thermodynamic state variables}
+
+Several observables of the $\textsc{fsm}$ are of interest:
+\begin{itemize}
+  \item \textbf{Pixel colors}. The occupations $n_k$ of different levels at a
+    \emph{single} site induce a distribution on $K$. In equilibrium, the mean
+    level
+    \[
+      \ev{k}
+      \equiv \frac{\sum_{k \in K} k n_k}{\sum_{k \in K} n_k}
+    \]
+    should be near $k_0$, since the energy of a level is symmetric about $k_0$.
+    As the temperature increases, so will the variance of the mean level. On the
+    flip side, does \emph{varying} $k_0$ for many pixels quasistatically
+    (changing the ground image) do work on the system? Yes, but is this
+    consistent with what we expect?
+
+  \item \textbf{Color distribution}. The net occupations $m_k$ of different
+    levels across \emph{all} sites induce a distribution on $K$. In the special
+    case of gray images (so levels are intensity), the entropy of the induced
+    random variable is intensity entropy that we have studied previously. This
+    is distribution is stationary when different levels cannot interact, but is
+    it so at finite temperature?
+    
+  \item \textbf{Opacity}. The net occupancy of a \emph{site} could be connected
+    to its opacity. In equilibrium, this should be similar across all sites.
+    Then regions with \emph{no} particles during nonequilibrium processes make
+    sense. The picture of a gas with fluctuating density that emits light comes
+    to mind. When at maximum opacity, the gas in that region cannot be
+    compressed further, and cannot accept more particles. The canonical density
+    properties of a photon gas (like energy density) might be a good reason to
+    choose the type of the particles to be bosonic (\emph{crayons}).
+
+  \item \textbf{Number of pixels}. We could vary the total number of pixels
+    different ways. One way is to have a continuous ground image, and choose
+    different grid discretizations. Another way is to have a large ground image
+    grid and vary the zoom level. It would be sensible to combine these sorts of
+    transformations with pixel color transformations, since they include
+    translation and rotation as special cases. This seems most most similar to
+    varying the volume of a gas. Including opacity makes fast adiabatic piston
+    motion volume changes like $V \mapsto 2V$ make sense.
+
+  \item \textbf{Number of particles}. Depending on if we allow interactions
+    between levels, it may be appropriate to consider chemical potentials.
+    Either for all particles, or for each color. Could this be conjugate to
+    opacity?
+
+  \item \textbf{The usual}. Given that quasistatic transformation of the other
+    quantities does work the way we expect, we can consider the usual response
+    variables like heat capacities and compressibilities. There is also the
+    thermodynamic entropy.
+\end{itemize}
+
+\end{document}
+
