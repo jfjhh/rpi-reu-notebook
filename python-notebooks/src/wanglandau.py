@@ -7,7 +7,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
-from collections import defaultdict
 
 
 # The test system is the 2d Ising model.
@@ -54,7 +53,7 @@ def density_sim(system):
     exp = np.exp
     
     # Parameters
-    M = 50_000 # Monte carlo step scale
+    M = 1_000_000 # Monte carlo step scale
     ε = 1e-6
     logftol = np.log(1 + ε)
     logf0 = 1
@@ -101,15 +100,16 @@ sys = Ising(isingn)
 Es, S, H = density_sim(sys);
 
 
-plt.plot(Es / isingn**2, S)
-plt.xlabel("E / N")
-plt.ylabel("log g(E) + C");
-
-
 # ## Calculating canonical ensemble averages
 
-gspl = interpolate.splrep(Es, S - min(S), s=2*np.sqrt(2))
-gs = np.exp(interpolate.splev(Es, gspl))
+gspl = interpolate.splrep(Es, S, s=2*np.sqrt(2))
+gs = np.exp(interpolate.splev(Es, gspl) - min(S))
+
+
+plt.plot(Es / isingn**2, S)
+plt.plot(Es / isingn**2, interpolate.splev(Es, gspl))
+plt.xlabel("E / N")
+plt.ylabel("log g(E) + C");
 
 
 # Translate energies to have minimum zero so that $Z$ is representable.
@@ -122,6 +122,7 @@ Z = lambda β: np.sum(gs * np.exp(-β * nEs))
 
 # Ensemble averages
 
+βs = [np.exp(k) for k in np.linspace(-5, 0, 200)]
 Eμ = lambda β: np.sum(nEs * gs * np.exp(-β * nEs)) / Z(β)
 E2 = lambda β: np.sum(nEs**2 * gs * np.exp(-β * nEs)) / Z(β)
 CV = lambda β: (E2(β) - Eμ(β)**2) * β**2
@@ -131,7 +132,6 @@ Sc = lambda β: β*Eμ(β) + np.log(Z(β))
 
 # Heat capacity
 
-βs = [np.exp(k) for k in np.linspace(-5, 0, 200)]
 plt.plot(np.log(βs), [CV(β) for β in βs])
 plt.xlabel("ln β")
 plt.ylabel("Heat capacity")
@@ -140,7 +140,6 @@ plt.show()
 
 # Entropy
 
-βs = [np.exp(k) for k in np.linspace(-5, 0, 200)]
 plt.plot(np.log(βs), [Sc(β) for β in βs])
 plt.xlabel("ln β")
 plt.ylabel("S(β) + C")
