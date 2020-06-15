@@ -20,7 +20,7 @@ from scipy import signal, misc
 # E(D', D)
 # = \sum_i \exp\left(-\frac{{(D_i' - D_i)}^2}{2\sigma_i} \right)
 # $$
-# (and the $\sigma_i$ are all the same?). The transformation $T$ is convolution with the point spread function of the telescope.
+# (with empirical $\sigma_i$). The transformation $T$ is convolution with the point spread function of the telescope.
 # 
 # To perform the optimization, we need not only the functions $S$ and $E$, but also a procedure to modify candidate images.
 
@@ -79,7 +79,7 @@ I0, _, _ = maxent(D, I, λ = 1, N = 1_000_000, ε = 1e-4)
 I0.x
 
 
-# Results are sort of near 5. The optimization is terrible, but you get the idea.
+# Results are sort of near 5. The optimization is terrible, but you get the idea: the entropy shifts the best point away from zero.
 
 # ## Example: Image from PSF convolution (measurement)
 
@@ -125,9 +125,6 @@ plt.imshow(I.transform().I, cmap='gray');
 I = IImage(misc.ascent()[250:350,250:350])
 Iguess = IImage(128 * np.ones((I.w, I.h), dtype=int))
 I0, _, _ = maxent(I.transform(), Iguess, λ = 1e-9, N = 1_000_000, ε = 1e-20) # Just do the max iterations
-
-
-plt.imshow(I0.I, cmap='gray');
 
 
 plt.imshow(I0.I, cmap='gray');
