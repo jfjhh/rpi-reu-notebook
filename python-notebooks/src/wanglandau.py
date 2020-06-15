@@ -38,12 +38,16 @@ class Ising:
 
 # A Wang-Landau algorithm, with quantities as logarithms and with monte-carlo steps proportional to $f^{-1/2}$ (a "Zhou-Bhat schedule").
 
-def flat(H, tol = 0.1):
+def flat(H, tol = 0.2):
     """Determines if an evenly-spaced histogram is approximately flat."""
     Hμ = np.mean(H)
     Hf = np.max(H)
     H0 = np.min(H)
     return Hf / (1 + tol) < Hμ < H0 / (1 - tol)
+# def flat(H, tol = 0.2):
+#     """Determines if an evenly-spaced histogram is approximately flat."""
+#     Hμ = np.mean(H)
+#     return not np.any(H < (1 - tol) * Hμ) and np.all(H != 0)
 
 
 # Note: some parameters are hardcoded for testing
@@ -53,13 +57,13 @@ def density_sim(system):
     exp = np.exp
     
     # Parameters
-    M = 1_000_000 # Monte carlo step scale
-    ε = 1e-6
+    M = 10_000_000 # Monte carlo step scale
+    ε = 1e-8
     logftol = np.log(1 + ε)
     logf0 = 1
-    N = int(32**2 / 20) # Energy bins
-    E0 = -32**2 / 4
-    Ef = 32**2 / 4
+    N = 8**2 + 1 # Energy bins
+    E0 = -2 * 8**2
+    Ef = 2 * 8**2
 
     ΔE = (Ef - E0) / (N - 1)
     fiters = int(np.ceil(np.log2(logf0) - np.log2(logftol)))
@@ -78,7 +82,8 @@ def density_sim(system):
         iters = 0
         niters = int((M + 1) * exp(-logf / 2))
         fiter += 1
-        while not flat(H[:-1]) and iters < niters:
+        while not flat(H[2:-2]) and iters < niters: # Ising-specific histogram
+#         while not flat(H) and iters < niters:
             system.propose()
             Eν = system.Eν
             j = max(0, min(N - 1, int(round((N - 1) * (Eν - E0) / (Ef - E0)))))
@@ -95,9 +100,18 @@ def density_sim(system):
     return Es, S, H
 
 
-isingn = 32
+isingn = 8
 sys = Ising(isingn)
 Es, S, H = density_sim(sys);
+
+
+H
+
+
+plt.plot(Es[2:-2] / isingn**2, S[2:-2]);
+
+
+plt.plot(Es[2:-2] / isingn**2, H[2:-2]);
 
 
 # ## Calculating canonical ensemble averages
