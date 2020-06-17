@@ -3,17 +3,47 @@
 \newcommand{\imsp}{\mathsf{Img}}
 
 \begin{document}
-\nbentry{June 10, 2020}{%
-  Simulations for canonical ensemble averages
-}
+\nbentry{June 12, 2020}{%
+  Progress summary
+}\label{sec:sum2}
 
-\begin{itemize}
-  \item Wang-Landau
-  \item Parallel tempering (replica exchange \textsc{mcmc})
-\end{itemize}
+This week, I investigated different methods for obtaining thermodynamic
+quantities from simulations. The issue is that quantities like entropy and the
+Helmholtz free energy depend on global properties of the phase space (the
+probability or density of a microstate), and thus cannot be constructed as
+cumulants of microstates during a simulation. A related issue is the
+improbability of ``tunneling'' across energy barriers when taking the usual
+temperature-weighted steps.
 
-\subfile{../python-notebooks/tex/wanglandau}
+These considerations motivate histogram-based methods, like the Wang-Landau
+algorithm that I implemented. Instead of operating in the canonical ensemble, we
+take a biased random walk on energies so that the result is a flat histogram of
+visited energies. The density of states from this process may then be used to
+compute a canonical partition function. Modifications where we keep a joint
+density of states with respect to another variable make other ensembles
+accessible.
+
+Further progress with the Wang-Landau algorithm was slowed by a discrepancy in
+the steps needed between Wang and Landau's results and mine for the 32 by 32
+Ising ferromagnet. Their original paper claims a \SI{0.035}{\percent} average
+error in the density of states after only \num{700000} total spin
+flips.\footnote{\texttt{10.1103/PhysRevLett.86.2050}} This is far fewer than the
+spin flips I needed, and another paper that looks at the scaling of the
+tunneling time (spin flips to go from ground to anti-ground state) might
+corroborate this.\footnote{\texttt{10.1103/PhysRevLett.92.097201}} Their
+tunneling times are all well above \num{1720000} (an eighth of their
+$\tau_\text{exact}$) for the same simulation. Success in the Wang-Landau
+algorithm requires visiting all energies many times, so execution takes several
+tunneling times. We are still trying to resolve this discrepancy, as well as
+other vague details from the original paper, like the possible choice of energy
+bins for continuous systems and unspecified edge behavior for energy intervals.
+
+I have looked at other histogram methods like \textsc{wham}, as well as parallel
+tempering (replica exchange \textsc{mcmc}). Both parallel tempering and the
+Wang-Landau algorithm are attractive because they are easily parallelizable. I
+have also come back to considering the \textsc{maxent}/\textsc{mem} image
+reconstruction technique and the issues of entropy and feature representation
+again.
 
 \end{document}
-
 

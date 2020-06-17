@@ -6,7 +6,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
+from scipy import interpolate, special
 
 
 # A Wang-Landau algorithm, with quantities as logarithms and with monte-carlo steps proportional to $f^{-1/2}$ (a "Zhou-Bhat schedule").
@@ -205,66 +205,142 @@ with open('wlresults.pickle', 'wb') as f:
     pickle.dump(wlresults, f)
 
 
-# We plot the results for $L = 5$, since it is in between the "slow" behavior of $L = 3$ and the "fast" (phase transition?) behavior of $L = 7$.
-
-L = Ls[2]
-Es, S, H = wlresults[2]
-
-
-plt.plot(Es / L**2, S)
-plt.xlabel("E / N")
-plt.ylabel("log g(E) + C");
+L = Ls[3]
+wlEs, S, H = wlresults[3]
+L
 
 
-plt.plot(Es / L**2, H)
+# Look at the histogram to see how the last WL iteration went.
+
+plt.plot(wlEs / L**2, H)
 plt.xlabel("E / N")
 plt.ylabel("Visits");
 
 
+# Fit a spline to interpolate and optionally clean up noise, giving WL g's up to a normalization constant.
+
+gspl = interpolate.splrep(wlEs, S, s=0*np.sqrt(2))
+wlgsC = np.exp(interpolate.splev(wlEs, gspl) - min(S))
+
+
+# ### Exact solution
+
+# The exact density of states for uniform values. This covers the all gray and all black/white cases. Everything else (normal images) are somewhere between. The gray is a slight approximation: the ground level is not degenerate, but we say it has degeneracy 2 like all the other sites. For the numbers of sites and values we are using, this is insignificant.
+
+def bw_g(E, N, M, exact=True):
+    return sum((-1)**k * special.comb(N, k, exact=exact) * special.comb(E + N - 1 - k*(M + 1), E - k*(M + 1), exact=exact)
+        for k in range(int(E / M) + 1))
+def gray_g(E, N, M, exact=True):
+    return 2 * bw_g(E, N, M, exact=exact)
+
+
+# We only compute to halfway since $g$ is symmetric and the other half's large numbers cause numerical instability.
+
+def reflect(a):
+    return np.hstack([a[:-2], a[-1], a[-2::-1]])
+def gray_gs(N, M):
+    Es = np.arange(N*M + 1)
+    gs = np.vectorize(gray_g)(np.arange(1 + N*M / 2), N, M, exact=False)
+    return Es, reflect(gs)
+
+
+Es, gs = gray_gs(N=L**2, M=2**7 - 1)
+
+
+# Renormalize the WL result
+
+wlgs = wlgsC * (gs[len(gs) // 2] / wlgsC[len(wlgsC) // 2])
+
+
+# Compare the exact result to the WL result.
+
+plt.plot(wlEs / len(wlEs), np.log(wlgs), label='WL')
+plt.plot(Es / len(Es), np.log(gs), label='Exact')
+plt.xlabel('E / N (symmetric)')
+plt.ylabel('ln g')
+plt.title('L = {}'.format(L))
+plt.legend();
+
+
+# Presumably all of the densities of states for different images fall in the region between the all-gray and all-black/white curves.
+
+bwEs, bwgs = gray_gs(N=L**2, M=2**8 - 1)
+bwgs /= 2 # Undo gray_gs degeneracy
+
+
+plt.plot(bwEs / len(bwEs), np.log(bwgs), 'black', label='BW')
+plt.plot(Es / len(Es), np.log(gs), 'gray', label='Gray')
+plt.xlabel('E / N (symmetric)')
+plt.ylabel('ln g')
+plt.title('L = {}'.format(L))
+plt.legend();
+
+
 # ### Calculating canonical ensemble averages
 
-gspl = interpolate.splrep(Es, S, s=0*np.sqrt(2))
-gs = np.exp(interpolate.splev(Es, gspl) - min(S))
+class CanonicalEnsemble:
+    def __init__(self, Es, gs, name):
+        self.Es = Es
+        self.gs = gs
+        self.name = name
+    def Z(self, β):
+        return np.sum(self.gs * np.exp(-β * self.Es))
+    def average(self, f, β):
+        return np.sum(f(self) * self.gs * np.exp(-β * self.Es)) / self.Z(β)
+    def energy(self, β):
+        return self.average(lambda ens: ens.Es, β)
+    def energy2(self, β):
+        return self.average(lambda ens: ens.Es**2, β)
+    def heat_capacity(self, β):
+        return self.energy2(β) - self.energy(β)**2
+    def free_energy(self, β):
+        return -np.log(self.Z(β)) / β
+    def entropy(self, β):
+        return β * self.energy(β) + np.log(self.Z(β))
 
 
-# Translate energies to have minimum zero so that $Z$ is representable.
-
-nEs = Es - min(Es)
-
-
-Z = lambda β: np.sum(gs * np.exp(-β * nEs))
+βs = [np.exp(k) for k in np.linspace(-8, 2, 500)]
+wlens = CanonicalEnsemble(wlEs, wlgs, 'WL') # Wang-Landau results
+xens = CanonicalEnsemble(Es, gs, 'Exact') # Exact
+ensembles = [wlens, xens]
 
 
-# Ensemble averages
+# Partition function
 
-βs = [np.exp(k) for k in np.linspace(-7, 3, 500)]
-Eμ = lambda β: np.sum(nEs * gs * np.exp(-β * nEs)) / Z(β)
-E2 = lambda β: np.sum(nEs**2 * gs * np.exp(-β * nEs)) / Z(β)
-CV = lambda β: (E2(β) - Eμ(β)**2) * β**2
-F  = lambda β: -np.log(Z(β)) / β
-Sc = lambda β: β*Eμ(β) + np.log(Z(β))
+for ens in ensembles:
+    plt.plot(-np.log(βs), np.log(np.vectorize(ens.Z)(βs)), label=ens.name)
+plt.xlabel("ln kT")
+plt.ylabel("Log partition function")
+plt.title('L = {}'.format(L))
+plt.legend();
 
 
 # Helmholtz free energy
 
-plt.plot(np.log(βs), [F(β) for β in βs])
-plt.xlabel("ln β")
+for ens in ensembles:
+    plt.plot(-np.log(βs), np.vectorize(ens.free_energy)(βs), label=ens.name)
+plt.xlabel("ln kT")
 plt.ylabel("Helmholtz free energy")
-plt.show()
+plt.title('L = {}'.format(L))
+plt.legend();
 
 
 # Heat capacity
 
-plt.plot(np.log(βs), [CV(β) for β in βs])
-plt.xlabel("ln β")
+for ens in ensembles:
+    plt.plot(-np.log(βs), np.vectorize(ens.heat_capacity)(βs), label=ens.name)
+plt.xlabel("ln kT")
 plt.ylabel("Heat capacity")
-plt.show()
+plt.title('L = {}'.format(L))
+plt.legend();
 
 
 # Entropy
 
-plt.plot(np.log(βs), [Sc(β) for β in βs])
-plt.xlabel("ln β")
-plt.ylabel("S(β) + C")
-plt.show()
+for ens in ensembles:
+    plt.plot(-np.log(βs), np.vectorize(ens.entropy)(βs), label=ens.name)
+plt.xlabel("ln kT")
+plt.ylabel("Canonical entropy")
+plt.title('L = {}'.format(L))
+plt.legend();
 

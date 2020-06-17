@@ -3,18 +3,26 @@
 \newcommand{\imsp}{\mathsf{Img}}
 
 \begin{document}
-\nbentry{June 13, 2020}{%
-  Description of \textsc{MaxEnt}
+\nbentry{June 14, 2020}{%
+  ``Greedy'' painting-like pictures
 }
 
-I describe the basic idea of the \textsc{MaxEnt} reconstruction technique, and
-implement the most na{\"\i}ve approach. This makes it clear that a better
-optimization algorithm is needed. The idea here is less to make it work than to
-get an idea of how it works, and then use a better software package later on if
-we do end up using \textsc{MaxEnt}.
+We noticed that swapping neighboring pixels in the previous simulations produced
+images that looked somewhat like paintings. There are other ways to make images
+look like paintings, and this is one of them. We randomly draw a shape of fixed
+size on the image. The color of the shape is the mean color of the image in the
+rectangle where the shape is drawn. This is done many times, and the size of the
+shapes gradually decreases. I call this ``greedy'' because choosing the mean
+color is the locally optimal color. This method has the advantage of being
+similar to the process of painting, which is why it is presented instead of the
+usual ``oilify'' filters in image processing software. An improvement would try
+to draw shapes that reflect the shapes of the subject matter, and perhaps add
+other texture. These kinds of considerations might require more global
+strategies.
 
-\subfile{../python-notebooks/tex/maxent}
+\subfile{../python-notebooks/tex/greedycubism}
 
 \end{document}
+
 
 

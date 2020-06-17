@@ -3,26 +3,59 @@
 \newcommand{\imsp}{\mathsf{Img}}
 
 \begin{document}
-\nbentry{June 14, 2020}{%
-  ``Greedy'' painting-like pictures
+\nbentry{June 16, 2020}{%
+  Exact density of states for gray and \textsc{bw} images
 }
 
-We noticed that swapping neighboring pixels in the previous simulations produced
-images that looked somewhat like paintings. There are other ways to make images
-look like paintings, and this is one of them. We randomly draw a shape of fixed
-size on the image. The color of the shape is the mean color of the image in the
-rectangle where the shape is drawn. This is done many times, and the size of the
-shapes gradually decreases. I call this ``greedy'' because choosing the mean
-color is the locally optimal color. This method has the advantage of being
-similar to the process of painting, which is why it is presented instead of the
-usual ``oilify'' filters in image processing software. An improvement would try
-to draw shapes that reflect the shapes of the subject matter, and perhaps add
-other texture. These kinds of considerations might require more global
-strategies.
+In doing the future statistical simulations of images, we would like to know the
+density of states $g(E)$ in our site-based model. This is the number of ways to
+choose the $N$ pixel values $m_n$ from $0,\, \ldots,\, M$ so that
+\[
+  E
+  = \sum_{n = 1}^N \abs{m_n - m_n^*},
+\]
+where $0 \le E \le MN$ and $m_n^*$ is the value of the ground image at pixel
+$n$. While the solution to follow works for arbitrary values of $m_n^*$, the
+results are simplest (no multinomial coefficients) if we consider $m_n^* = 0$ or
+$M$ or $m_n^* = M/2$. That is, the image is all black or white (\textsc{bw}) or
+gray. Then we have
+\[
+  E
+  = \sum_{n = 1}^N g' m_n
+\]
+with $m_n = 0,\, \ldots,\, M$ and $g' = 1$ (\textsc{bw}) or $m_n = 0,\,
+\ldots,\, M/2$ and $g' = 2$ (gray).\footnote{This gives $m = 0$ degeneracy 2,
+which is not strictly correct but matters little.}
+In that case, we'll consider \textsc{bw} for concreteness.
 
-\subfile{../python-notebooks/tex/greedycubism}
+We encode the energy as an exponent, so that $g(E)$ is the coefficient of $x^E$
+in the polynomial
+\[
+  p(x)
+  \equiv {\qty(x^0 + x^1 + \cdots + x^M)}^N,
+\]
+since each inner sum represents different assignments of a pixel value and the
+products will produce terms that represent all different combinations of values.
+We then expand to find
+\begin{align}
+  p(x)
+  &= {\qty(\frac{1 - x^{M+1}}{1 - x})}^N \\
+  &= \sum_{k=0}^N \sum_{j=0}^\infty
+  {(-1)}^k \binom{N}{k} x^{(M+1)k} \cdot {(-1)}^j \binom{-N}{j} x^j \\
+  &= \sum_{k=0}^N \sum_{j=0}^\infty
+  {(-1)}^k \binom{N}{k} \binom{N + j - 1}{j} x^{(M+1)k + j}.
+\end{align}
+The value of $j$ in the inner sum for $x$ to have power $E$ is $j = E - k(M+1)$,
+so the coefficient of $x^E$ in $p(x)$ is
+\begin{equation}
+  \label{eq:imgdos}
+  g(E)
+  = \sum_{k=0}^N
+  {(-1)}^k \binom{N}{k} \binom{N + E - k(M+1) - 1}{E - k(M+1)}.
+\end{equation}
+(Due to the stucture of the binomial coefficients, we may let the summation
+extend over all $k \in \ZZ$ for further manipulation.)
 
 \end{document}
-
 
 
