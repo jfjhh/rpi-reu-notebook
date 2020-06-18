@@ -4,12 +4,23 @@
 # # The Wang-Landau algorithm (density of states)
 # We determine thermodynamic quantities from the partition function by obtaining the density of states from a simulation.
 
+# TODO:
+# - Compare different flatness functions
+# - Profile using `binindex` instead of assuming linear system energy bins.
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate, special
 
 
-# A Wang-Landau algorithm, with quantities as logarithms and with monte-carlo steps proportional to $f^{-1/2}$ (a "Zhou-Bhat schedule").
+# Utility functions.
+
+import bisect
+
+
+def binindex(Es, E):
+    return bisect.bisect(Es, E, hi=len(Es) - 1) - 1
+
 
 def flat(H, tol = 0.2):
     """Determines if an evenly-spaced histogram is approximately flat."""
@@ -23,52 +34,149 @@ def flat(H, tol = 0.2):
 #     return not np.any(H < (1 - tol) * Hμ) and np.all(H != 0)
 
 
+# A Wang-Landau algorithm, with quantities as logarithms and with monte-carlo steps proportional to $f^{-1/2}$ (a "Zhou-Bhat schedule").
+# 
+# We use energy bins encoded by numbers $E_i$ for $i \in [0,\, N]$, so that there are $N$ bins. The energies $E$ covered by bin $i$ satisfy $E_i \le E < E_{i+1}$. For the bounded discrete systems that we are considering, we must choose $E_N$ to be an arbitrary number above the maximum energy.
+
 def wanglandau(system,
+                Es,            # The energy bins
                 M = 1_00_000,  # Monte carlo step scale
-                ε = 1e-8,       # f tolerance
-                logf0 = 1,      # Initial log f
-                N = 8**2 + 1,   # Number of energy bins
-                E0 = -2 * 8**2, # Minimum energy
-                Ef = 2 * 8**2   # Maximum energy
+                ε = 1e-8,      # f tolerance
+                logf0 = 1,     # Initial log f
+                logging = True # Log progress of f-steps
                ):
     # Initial values
+    E0 = Es[0]
+    Ef = Es[-1]
+    ΔE = Es[1] - E0
+    N = len(Es) - 1
     logf = logf0
     logftol = np.log(1 + ε)
-    Es = np.linspace(E0, Ef, N)
     S = np.zeros(N) # Set all initial g's to 1
     H = np.zeros(N, dtype=int)
-    # Linearly bin the energy
-    i = max(0, min(N - 1, int(round((N - 1) * (system.E - E0) / (Ef - E0)))))
+    i = binindex(Es, system.E)
     
-    # Logging
-    mciters = 0
-    fiter = 0
-    ΔE = (Ef - E0) / (N - 1)
-    fiters = int(np.ceil(np.log2(logf0) - np.log2(logftol)))
-    print("ΔE = {}".format(ΔE))
+    if logging:
+        mciters = 0
+        fiter = 0
+        fiters = int(np.ceil(np.log2(logf0) - np.log2(logftol)))
+        print("Wang-Landau START:")
+        print("\t|Es| = {}\n\tM = {}\n\tε = {}\n\tlog f0 = {}".format(len(Es), M, ε, logf0))
     
     while logftol < logf:
         H[:] = 0
         logf /= 2
         iters = 0
         niters = int((M + 1) * np.exp(-logf / 2))
-        fiter += 1
-        while not flat(H[2:-2]) and iters < niters: # Ising-specific histogram
-#         while not flat(H) and iters < niters:
+        if logging:
+            fiter += 1
+        while not flat(H) and iters < niters:
             system.propose()
             Eν = system.Eν
-            j = max(0, min(N - 1, int(round((N - 1) * (Eν - E0) / (Ef - E0)))))
-            if E0 - ΔE/2 <= Eν <= Ef + ΔE/2 and (S[j] < S[i] or np.random.rand() < np.exp(S[i] - S[j])):
+            j = binindex(Es, Eν)
+#             if E0 <= Eν <= Ef and (
+            if E0 <= Eν < Ef and (
+                S[j] < S[i] or np.random.rand() < np.exp(S[i] - S[j])):
                 system.accept()
                 i = j
             H[i] += 1
             S[i] += logf
             iters += 1
-        mciters += iters
-        print("f: {} / {}\t({} / {})".format(fiter, fiters, iters, niters))
+        if logging:
+            mciters += iters
+            print("f: {} / {}\t({} / {})".format(fiter, fiters, iters, niters))
     
-    print("Done: {} total MC iterations.".format(mciters))
+    if logging:
+        print("Done: {} total MC iterations.".format(mciters))
     return Es, S, H
+
+
+# ### Parallel construction of the density of states
+
+from multiprocessing import Pool
+import copy
+
+
+# We can choose overlapping bins for the parallel processes to negate boundary effects.
+
+def extend_bin(bins, i, k = 0.05):
+    if len(bins) <= 2: # There is only one bin
+        return bins
+    k = max(0, min(1, k))
+    return (bins[i] - (k*(bins[i] - bins[i-1]) if 0 < i else 0),
+            bins[i+1] + (k*(bins[i+2] - bins[i+1]) if i < len(bins) - 2 else 0))
+
+
+# Try monotonic instead of Wang-Landau steps
+
+def find_bin_systems(sys, Es, Ebins, N = 1_000_000):
+    """Find systems with energies in the bins given by `Es` by stepping `sys`."""
+#     S = np.zeros(len(Es), dtype=int)
+    systems = [None] * (len(Ebins) - 1)
+    n = 0
+    i = binindex(Es, sys.E)
+    while any(system is None for system in systems) and n < N:
+        for s in range(len(systems)):
+            if systems[s] is None and Ebins[s] <= sys.E < Ebins[s + 1]:
+                systems[s] = copy.deepcopy(sys)
+        
+        sys.propose()
+        j = binindex(Es, sys.Eν)
+        if sys.E < sys.E\nu:
+            sys.accept()
+#         if S[j] < S[i]:
+#             i = j
+#             sys.accept()
+#         S[i] += 1
+        n += 1
+        
+    if N <= n:
+        raise ValueError('Could not find bin systems after {} iterations.'.format(N))
+    return systems
+
+
+# Now we can construct our parallel systems.
+
+def parallel_systems(system, Es, n = 8, k = 0.1, N = 1_000_000):
+    Ebins = np.linspace(Es[0], Es[-1], n + 1)
+    systems = find_bin_systems(system, Es, Ebins, N)
+    binEs = [(lambda E0, Ef: Es[(E0 <= Es) & (Es <= Ef)])(*extend_bin(Ebins, i, k))
+             for i in range(len(Ebins) - 1)]
+    return zip(systems, binEs)
+
+
+# We also need a way to reset the random number generator seed in a way that is time-independent and different for each process.
+
+import os, struct
+
+
+def urandom_reseed():
+    """Reseeds numpy's RNG from `urandom` and returns the seed"""
+    seed = struct.unpack('I', os.urandom(4))[0]
+    np.random.seed(seed)
+    return seed
+
+
+# Once we have parallel results, we stitch the pieces of $\ln g(E)$ together.
+
+def stitch_results(wlresults):
+    E0, S0, _ = wlresults[0]
+    E, S = E0, S0
+    for i in range(1, len(wlresults)):
+        Eν, Sν, _ = wlresults[i]
+        # Assumes overlap is at end regions
+        _, i0s, iνs = np.intersect1d(E0[:-1], Eν[:-1], return_indices=True)
+        # Simplest: join middles of overlap regions
+        l = len(i0s)
+        m = l // 2
+#         print(l, m, i0s, iνs, i0s[m], S0, Sν)
+        Sν -= Sν[iνs[m]] - S0[i0s[m]]
+        # Simplest: average the overlaps to produce the final value
+        E = np.hstack((E, Eν[l+1:]))
+        S[-l:] = (Sν[iνs] + S0[i0s]) / 2
+        S = np.hstack((S, Sν[l:]))
+        E0, S0 = Eν, Sν
+    return E, S
 
 
 # ## The 2D Ising model
@@ -96,16 +204,59 @@ class Ising:
         self.E = self.Eν
 
 
-# Note that this class-based approach adds some overhead. For speed, instances of `Ising` should be inlined into the simulation method.
+# Note that this class-based approach adds some overhead. For speed, instances of `Ising` should be inlined into the `wanglandau`.
 
-isingn = 8
+# ### Simulation
+
+isingn = 32
 sys = Ising(isingn)
-Es, S, H = wanglandau(sys);
 
 
-# The energies at indices 1 and -1 are not occupied in the Ising model.
+# The Ising energies over the full range, with correct end bin. We remove the penultimate energies since $E = 2$ or $E_{\text{max}} - 2$ cannot happen.
 
-Es, S, H = Es[2:-2], S[2:-2], H[2:-2]
+isingE0 = -2 * isingn**2
+isingEf = 2 * isingn**2
+isingΔE = 4
+Es = np.arange(isingE0, isingEf + isingΔE + 1, isingΔE)
+Es = np.delete(np.delete(Es, -3), 1)
+
+
+psystems = parallel_systems(sys, Es, n = 16, k = 0.5, N = 10_000_000)
+
+
+def parallel_wanglandau(subsystem): # Convenient form for `Pool.map`
+    urandom_reseed()
+    results = wanglandau(*subsystem, M = 1_000_000, logging=False)
+    print('*', end='', flush=True)
+    return results
+
+
+with Pool() as pool:
+    wlresults = pool.map(parallel_wanglandau, psystems)
+
+
+sEs, sS = stitch_results(wlresults)
+
+
+for Es, S, H in wlresults:
+    plt.plot(Es[:-1], S)
+
+
+plt.plot(sEs[:-1], sS);
+
+
+import os, tempfile, pickle
+
+
+with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-ising-', suffix='.pickle', dir='data', delete=False) as f:
+    print(os.path.basename(f.name))
+    pickle.dump(wlresults, f)
+    pickle.dump(sEs, f)
+    pickle.dump(sS, f)
+
+
+Es, S, H = wanglandau(sys, Es, M = 200_000);
+Es = Es[:-1] # Use the actual energy levels instead of the bins
 
 
 plt.plot(Es / isingn**2, S)
@@ -193,20 +344,17 @@ class StatisticalImage:
         self.E = self.Eν
 
 
+# ### Simulation
+
 Ls = range(1, 11, 2)
 wlresults = [wanglandau(StatisticalImage(128 * np.ones((L, L), dtype=int)),
-                        M=1_000_000, N=127*L*L + 1, E0=0, Ef=127*L*L)
+                        Es = np.arange(0, 127*L**2 + 1),
+                        M=1_000_000)
              for L in Ls]
 
 
-import pickle
-with open('wlresults.pickle', 'wb') as f:
-    pickle.dump(list(Ls), f)
-    pickle.dump(wlresults, f)
-
-
-L = Ls[3]
-wlEs, S, H = wlresults[3]
+L = Ls[2]
+wlEs, S, H = wlresults[2]
 L
 
 
@@ -215,6 +363,47 @@ L
 plt.plot(wlEs / L**2, H)
 plt.xlabel("E / N")
 plt.ylabel("Visits");
+
+
+# ### Parallel
+
+L = 3
+sys = StatisticalImage(np.zeros((L, L), dtype=int))
+Es = np.arange(0, (2**8 - 1)*L**2 + 1)
+psystems = parallel_systems(sys, Es, n = 8, k = 0.25, N = 1_000_000)
+
+
+def parallel_wanglandau(subsystem): # Convenient form for `Pool.map`
+    urandom_reseed()
+    results = wanglandau(*subsystem, M = 10_000_000, logging=False)
+    print('*', end='', flush=True)
+    return results
+
+
+with Pool() as pool:
+    wlresults = pool.map(parallel_wanglandau, psystems)
+
+
+sEs, sS = stitch_results(wlresults)
+
+
+import os, tempfile, pickle
+
+
+with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-image-', suffix='.pickle', dir='data', delete=False) as f:
+    print(os.path.basename(f.name))
+    pickle.dump(list(Ls), f)
+    pickle.dump(wlresults, f)
+
+
+for Es, S, H in wlresults:
+    plt.plot(Es[:-1], S)
+
+
+plt.plot(sEs[:-1], sS);
+
+
+wlEs, S = sEs[:-1], sS
 
 
 # Fit a spline to interpolate and optionally clean up noise, giving WL g's up to a normalization constant.
@@ -244,7 +433,11 @@ def gray_gs(N, M):
     return Es, reflect(gs)
 
 
-Es, gs = gray_gs(N=L**2, M=2**7 - 1)
+# Gray
+# Es, gs = gray_gs(N=L**2, M=2**7 - 1)
+# Black
+Es, gs = gray_gs(N=L**2, M=2**8 - 1)
+gs /= 2
 
 
 # Renormalize the WL result
