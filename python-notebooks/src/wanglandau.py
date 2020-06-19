@@ -117,11 +117,9 @@ def extend_bin(bins, i, k = 0.05):
             bins[i+1] + (k*(bins[i+2] - bins[i+1]) if i < len(bins) - 2 else 0))
 
 
-# Try monotonic instead of Wang-Landau steps
-
 def find_bin_systems(sys, Es, Ebins, N = 1_000_000):
     """Find systems with energies in the bins given by `Es` by stepping `sys`."""
-#     S = np.zeros(len(Es), dtype=int)
+    S = np.zeros(len(Es), dtype=int)
     systems = [None] * (len(Ebins) - 1)
     n = 0
     i = binindex(Es, sys.E)
@@ -132,12 +130,12 @@ def find_bin_systems(sys, Es, Ebins, N = 1_000_000):
         
         sys.propose()
         j = binindex(Es, sys.Eν)
-        if sys.E < sys.Eν:
-            sys.accept()
-#         if S[j] < S[i]:
-#             i = j
+#         if sys.E < sys.Eν:
 #             sys.accept()
-#         S[i] += 1
+        if S[j] < S[i]:
+            i = j
+            sys.accept()
+        S[i] += 1
         n += 1
         
     if N <= n:
@@ -336,7 +334,7 @@ class StatisticalImage:
             dx = -r
         else:
             dx = 2*r - 1
-        dE = dx
+        dE = np.abs(dx) if x0 == x else (dx if x0 < x else -dx)
         self.dx = dx
         self.dE = dE
         self.Eν = self.E + dE
@@ -362,9 +360,10 @@ plt.plot(Es[:-1], exactS);
 
 N = 16
 M = 2**5 - 1
-sys = StatisticalImage(np.zeros(N, dtype=int), M) # BW
-Es = np.arange(N*M + 1 + 1)
-psystems = parallel_systems(sys, Es, n = 8, k = 0.5, N = 1_000_000)
+Moff = 4
+sys = StatisticalImage(Moff * np.ones(N, dtype=int), M) # Intermediate value
+Es = np.arange(N*(M - Moff) + 1 + 1) # for Moff < M / 2
+psystems = parallel_systems(sys, Es, n = 8, k = 0.5, N = 1_00_000)
 
 
 def parallel_wanglandau(subsystem): # Convenient form for `Pool.map`
@@ -456,13 +455,10 @@ plt.title('L = {}'.format(L))
 plt.legend();
 
 
-wlgs[[0,-1]]
-
-
-plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
-plt.title('Relative error')
-plt.xlabel('E / MN')
-plt.ylabel('ε(S)');
+# plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
+# plt.title('Relative error')
+# plt.xlabel('E / MN')
+# plt.ylabel('ε(S)');
 
 
 # ### Calculating canonical ensemble averages
