@@ -5,8 +5,11 @@
 # We determine thermodynamic quantities from the partition function by obtaining the density of states from a simulation.
 
 # TODO:
-# - Compare different flatness functions
-# - Profile using `binindex` instead of assuming linear system energy bins.
+# * Improve stitching of parallel solutions
+
+from numba import jit
+nopython = True
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,35 +18,42 @@ from scipy import interpolate, special
 
 # Utility functions.
 
-import bisect
+from bisect import bisect
 
 
+@jit
 def binindex(Es, E):
-    return bisect.bisect(Es, E, hi=len(Es) - 1) - 1
+    return bisect(Es, E, hi=len(Es) - 1) - 1
 
 
-def flat(H, tol = 0.2):
-    """Determines if an evenly-spaced histogram is approximately flat."""
-    Hμ = np.mean(H)
-    Hf = np.max(H)
-    H0 = np.min(H)
-    return Hf / (1 + tol) < Hμ < H0 / (1 - tol)
+# @jit
 # def flat(H, tol = 0.2):
 #     """Determines if an evenly-spaced histogram is approximately flat."""
 #     Hμ = np.mean(H)
-#     return not np.any(H < (1 - tol) * Hμ) and np.all(H != 0)
+#     Hf = np.max(H)
+#     H0 = np.min(H)
+#     return Hf / (1 + tol) < Hμ < H0 / (1 - tol)
+@jit
+def flat(H, tol = 0.2):
+    """Determines if an evenly-spaced histogram is approximately flat."""
+    Hμ = np.mean(H)
+    return not np.any(H < (1 - tol) * Hμ) and np.all(H != 0)
 
+
+# ## Algorithm
 
 # A Wang-Landau algorithm, with quantities as logarithms and with monte-carlo steps proportional to $f^{-1/2}$ (a "Zhou-Bhat schedule").
 # 
 # We use energy bins encoded by numbers $E_i$ for $i \in [0,\, N]$, so that there are $N$ bins. The energies $E$ covered by bin $i$ satisfy $E_i \le E < E_{i+1}$. For the bounded discrete systems that we are considering, we must choose $E_N$ to be an arbitrary number above the maximum energy.
 
+@jit(forceobj=True)
 def wanglandau(system,
-                Es,            # The energy bins
-                M = 1_00_000,  # Monte carlo step scale
-                ε = 1e-8,      # f tolerance
-                logf0 = 1,     # Initial log f
-                logging = True # Log progress of f-steps
+                Es,             # The energy bins
+                M = 1_00_000,   # Monte carlo step scale
+                ε = 1e-8,       # f tolerance
+                logf0 = 1,      # Initial log f
+                logging = True, # Log progress of f-steps
+                flatness = 0.2  # Desired histogram flatness
                ):
     # Initial values
     E0 = Es[0]
@@ -70,7 +80,7 @@ def wanglandau(system,
         niters = int((M + 1) * np.exp(-logf / 2))
         if logging:
             fiter += 1
-        while not flat(H) and iters < niters:
+        while not flat(H, flatness) and iters < niters:
             system.propose()
             Eν = system.Eν
             j = binindex(Es, Eν)
@@ -122,7 +132,7 @@ def find_bin_systems(sys, Es, Ebins, N = 1_000_000):
         
         sys.propose()
         j = binindex(Es, sys.Eν)
-        if sys.E < sys.E\nu:
+        if sys.E < sys.Eν:
             sys.accept()
 #         if S[j] < S[i]:
 #             i = j
@@ -221,7 +231,7 @@ Es = np.arange(isingE0, isingEf + isingΔE + 1, isingΔE)
 Es = np.delete(np.delete(Es, -3), 1)
 
 
-psystems = parallel_systems(sys, Es, n = 16, k = 0.5, N = 10_000_000)
+psystems = parallel_systems(sys, Es, n = 16, k = 0.5, N = 50_000_000)
 
 
 def parallel_wanglandau(subsystem): # Convenient form for `Pool.map`
@@ -253,20 +263,6 @@ with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-ising-', suffix='.
     pickle.dump(wlresults, f)
     pickle.dump(sEs, f)
     pickle.dump(sS, f)
-
-
-Es, S, H = wanglandau(sys, Es, M = 200_000);
-Es = Es[:-1] # Use the actual energy levels instead of the bins
-
-
-plt.plot(Es / isingn**2, S)
-plt.xlabel("E / N")
-plt.ylabel("log g(E) + C");
-
-
-plt.plot(Es / isingn**2, H)
-plt.xlabel("E / N")
-plt.ylabel("Visits");
 
 
 # ### Calculating canonical ensemble averages
@@ -317,65 +313,63 @@ plt.show()
 
 # ## Thermal calculations on images
 
+# @jitclass
 class StatisticalImage:
-    def __init__(self, I0):
+    def __init__(self, I0, M = 2**8 - 1):
         self.I0 = I0
         self.I = I0.copy()
-        self.w, self.h = np.shape(I0)
+        self.N = len(I0)
+        self.M = M
         self.E = self.energy()
         self.Eν = self.E
     def energy(self):
-        return sum(x0 - x if x < x0 else x - x0
-                   for x, x0 in zip(self.I.flat, self.I0.flat))
+        return np.sum(np.abs(self.I - self.I0))
     def propose(self):
-        i, j = np.random.randint(self.w), np.random.randint(self.h)
-        self.i, self.j = i, j
-        x0 = self.I0[i, j]
-        x = self.I[i, j]
-        r = 16
-        dx = np.random.randint(-min(r, x), min(r, 255 - x) + 1)
-        x1 = x + dx
-        dE = (x0 - x1 if x1 < x0 else x1 - x0) - (x0 - x if x < x0 else x - x0)
+        i = np.random.randint(self.N)
+        self.i = i
+        x0 = self.I0[i]
+        x = self.I[i]
+        r = np.random.randint(2)
+        if x == 0:
+            dx = r
+        elif x == self.M:
+            dx = -r
+        else:
+            dx = 2*r - 1
+        dE = dx
         self.dx = dx
         self.dE = dE
         self.Eν = self.E + dE
     def accept(self):
-        self.I[self.i, self.j] += self.dx
+        self.I[self.i] += self.dx
         self.E = self.Eν
 
 
-# ### Simulation
-
-Ls = range(1, 11, 2)
-wlresults = [wanglandau(StatisticalImage(128 * np.ones((L, L), dtype=int)),
-                        Es = np.arange(0, 127*L**2 + 1),
-                        M=1_000_000)
-             for L in Ls]
+N = 3
+M = 3
+sys = StatisticalImage(np.zeros(N, dtype=int), M)
+Es = np.arange(0, N*M + 1 + 1)
+exactS = np.log(exact_bw_gs(N, M)[1])
 
 
-L = Ls[2]
-wlEs, S, H = wlresults[2]
-L
+Es, S, H = wanglandau(sys, Es, M = 100_000, ε = 1e-8, flatness = 0.01, logging=False)
+S -= np.min(S)
+plt.plot(Es[:-1], S)
+plt.plot(Es[:-1], exactS);
 
 
-# Look at the histogram to see how the last WL iteration went.
+# ### Parallel Simulation
 
-plt.plot(wlEs / L**2, H)
-plt.xlabel("E / N")
-plt.ylabel("Visits");
-
-
-# ### Parallel
-
-L = 3
-sys = StatisticalImage(np.zeros((L, L), dtype=int))
-Es = np.arange(0, (2**8 - 1)*L**2 + 1)
-psystems = parallel_systems(sys, Es, n = 8, k = 0.25, N = 1_000_000)
+N = 16
+M = 2**5 - 1
+sys = StatisticalImage(np.zeros(N, dtype=int), M) # BW
+Es = np.arange(N*M + 1 + 1)
+psystems = parallel_systems(sys, Es, n = 8, k = 0.5, N = 1_000_000)
 
 
 def parallel_wanglandau(subsystem): # Convenient form for `Pool.map`
     urandom_reseed()
-    results = wanglandau(*subsystem, M = 10_000_000, logging=False)
+    results = wanglandau(*subsystem, M = 10_000_000, ε = 1e-10, logging=False)
     print('*', end='', flush=True)
     return results
 
@@ -392,15 +386,13 @@ import os, tempfile, pickle
 
 with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-image-', suffix='.pickle', dir='data', delete=False) as f:
     print(os.path.basename(f.name))
-    pickle.dump(list(Ls), f)
+    pickle.dump(N, f)
+    pickle.dump(M, f)
     pickle.dump(wlresults, f)
 
 
 for Es, S, H in wlresults:
     plt.plot(Es[:-1], S)
-
-
-plt.plot(sEs[:-1], sS);
 
 
 wlEs, S = sEs[:-1], sS
@@ -409,64 +401,68 @@ wlEs, S = sEs[:-1], sS
 # Fit a spline to interpolate and optionally clean up noise, giving WL g's up to a normalization constant.
 
 gspl = interpolate.splrep(wlEs, S, s=0*np.sqrt(2))
-wlgsC = np.exp(interpolate.splev(wlEs, gspl) - min(S))
+wlgs = np.exp(interpolate.splev(wlEs, gspl) - min(S))
 
 
 # ### Exact solution
+
+# We only compute to halfway since $g$ is symmetric and the other half's large numbers cause numerical instability.
+
+def reflect(a, center=True):
+    if center:
+        return np.hstack([a[:-1], a[-1], a[-2::-1]])
+    else:
+        return np.hstack([a, a[::-1]])
+
 
 # The exact density of states for uniform values. This covers the all gray and all black/white cases. Everything else (normal images) are somewhere between. The gray is a slight approximation: the ground level is not degenerate, but we say it has degeneracy 2 like all the other sites. For the numbers of sites and values we are using, this is insignificant.
 
 def bw_g(E, N, M, exact=True):
     return sum((-1)**k * special.comb(N, k, exact=exact) * special.comb(E + N - 1 - k*(M + 1), E - k*(M + 1), exact=exact)
         for k in range(int(E / M) + 1))
+def exact_bw_gs(N, M):
+    Es = np.arange(N*M + 1)
+    gs = np.vectorize(bw_g)(np.arange(1 + N*M // 2), N, M, exact=False)
+    return Es, reflect(gs, len(Es) % 2 == 1)
+
+
 def gray_g(E, N, M, exact=True):
     return 2 * bw_g(E, N, M, exact=exact)
-
-
-# We only compute to halfway since $g$ is symmetric and the other half's large numbers cause numerical instability.
-
-def reflect(a):
-    return np.hstack([a[:-2], a[-1], a[-2::-1]])
-def gray_gs(N, M):
+def exact_gray_gs(N, M):
     Es = np.arange(N*M + 1)
-    gs = np.vectorize(gray_g)(np.arange(1 + N*M / 2), N, M, exact=False)
-    return Es, reflect(gs)
+    gs = np.vectorize(gray_g)(np.arange(1 + N*M // 2), N, M, exact=False)
+    return Es, reflect(gs, len(Es) % 2 == 1)
 
 
-# Gray
-# Es, gs = gray_gs(N=L**2, M=2**7 - 1)
-# Black
-Es, gs = gray_gs(N=L**2, M=2**8 - 1)
-gs /= 2
+# Expected results for black/white and gray.
+
+bw_Es, bw_gs = exact_bw_gs(N=N, M=M)
+gray_Es, gray_gs = exact_gray_gs(N=N, M=-1 + (M + 1) // 2)
 
 
-# Renormalize the WL result
+# Choose what to compare to.
 
-wlgs = wlgsC * (gs[len(gs) // 2] / wlgsC[len(wlgsC) // 2])
-
-
-# Compare the exact result to the WL result.
-
-plt.plot(wlEs / len(wlEs), np.log(wlgs), label='WL')
-plt.plot(Es / len(Es), np.log(gs), label='Exact')
-plt.xlabel('E / N (symmetric)')
-plt.ylabel('ln g')
-plt.title('L = {}'.format(L))
-plt.legend();
+Es, gs = bw_Es, bw_gs
 
 
 # Presumably all of the densities of states for different images fall in the region between the all-gray and all-black/white curves.
 
-bwEs, bwgs = gray_gs(N=L**2, M=2**8 - 1)
-bwgs /= 2 # Undo gray_gs degeneracy
-
-
-plt.plot(bwEs / len(bwEs), np.log(bwgs), 'black', label='BW')
-plt.plot(Es / len(Es), np.log(gs), 'gray', label='Gray')
-plt.xlabel('E / N (symmetric)')
+plt.plot(bw_Es / len(bw_Es), np.log(bw_gs), 'black', label='BW')
+plt.plot(gray_Es / len(gray_Es), np.log(gray_gs), 'gray', label='Gray')
+plt.plot(wlEs / len(wlEs), np.log(wlgs), label='WL')
+plt.xlabel('E / MN')
 plt.ylabel('ln g')
 plt.title('L = {}'.format(L))
 plt.legend();
+
+
+wlgs[[0,-1]]
+
+
+plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
+plt.title('Relative error')
+plt.xlabel('E / MN')
+plt.ylabel('ε(S)');
 
 
 # ### Calculating canonical ensemble averages
