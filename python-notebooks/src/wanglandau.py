@@ -4,7 +4,7 @@
 # # The Wang-Landau algorithm (density of states)
 # We determine thermodynamic quantities from the partition function by obtaining the density of states from a simulation.
 
-from numba import jit, jit_module
+from numba import njit, jit_module
 
 
 import numpy as np
@@ -14,7 +14,7 @@ import os, struct # for using `urandom`
 
 # Utility functions.
 
-@jit(nopython=True, cache=True)
+@njit(cache=True, inline='always')
 def bisect_right(a, x, lo=0, hi=None):
     if lo < 0:
         raise ValueError('lo must be non-negative')
@@ -28,16 +28,15 @@ def bisect_right(a, x, lo=0, hi=None):
             lo = mid + 1
     return lo
 
-@jit(nopython=True, cache=True)
+@njit(cache=True)
 def binindex(a, x):
     return bisect_right(a, x, hi=len(a) - 1) - 1
 
 
-@jit(nopython=True, cache=True)
-def flat(H, tol = 0.2):
-    """Determines if an evenly-spaced histogram is approximately flat."""
-    Hμ = np.mean(H)
-    return not np.any(H < (1 - tol) * Hμ) and np.all(H != 0)
+@njit(cache=True)
+def flat(H, ε = 0.2):
+    """Determines if a histogram is approximately flat to within ε of the mean height."""
+    return not np.any(H < (1 - ε) * np.mean(H)) and np.all(H != 0)
 
 
 # ## Algorithm
@@ -46,35 +45,35 @@ def flat(H, tol = 0.2):
 # 
 # We use energy bins encoded by numbers $E_i$ for $i \in [0,\, N]$, so that there are $N$ bins. The energies $E$ covered by bin $i$ satisfy $E_i \le E < E_{i+1}$. For the bounded discrete systems that we are considering, we must choose $E_N$ to be an arbitrary number above the maximum energy.
 
-@jit(nopython=True)
+@njit
 def wanglandau(system,
                 Es,             # The energy bins
                 M = 1_00_000,   # Monte carlo step scale
                 ε = 1e-10,      # f tolerance
                 logf0 = 1,      # Initial log f
-                logging = True, # Log progress of f-steps
-                flatness = 0.1  # Desired histogram flatness
+                flatness = 0.1, # Desired histogram flatness
+                logging = False # Log progress of f-steps
                ):
+    if M <= 0 or ε <= 1e-16 or not (0 < logf0 <= 1) or not (0 <= flatness < 1):
+        raise ValueError('Invalid Wang-Landau parameter.')
+
     # Initial values
+#     Es = system.Es # Testing
     E0 = Es[0]
     Ef = Es[-1]
-    ΔE = Es[1] - E0
     N = len(Es) - 1
-    logf = logf0
+    logf = 2 * logf0
     logftol = np.log(1 + ε)
     S = np.zeros(N) # Set all initial g's to 1
     H = np.zeros(N, dtype=np.int32)
     i = binindex(Es, system.E)
+    converged = True
     
     if logging:
         mciters = 0
         fiter = 0
         fiters = int(np.ceil(np.log2(logf0) - np.log2(logftol)))
-        print("Wang-Landau START:")
-        print("\t|Es| = ", len(Es),
-              "\n\tM = ", M,
-              "\n\tε = ", ε,
-              "\n\tlog f0 = ", logf0)
+        print("Wang-Landau START")
     
     while logftol < logf:
         H[:] = 0
@@ -87,7 +86,6 @@ def wanglandau(system,
             system.propose()
             Eν = system.Eν
             j = binindex(Es, Eν)
-#             if E0 <= Eν <= Ef and (
             if E0 <= Eν < Ef and (
                 S[j] < S[i] or np.random.rand() < np.exp(S[i] - S[j])):
                 system.accept()
@@ -95,8 +93,10 @@ def wanglandau(system,
             H[i] += 1
             S[i] += logf
             iters += 1
+        mciters += iters
+        if niters <= iters:
+            converged = False
         if logging:
-            mciters += iters
             print("f: ", fiter, " / ", fiters, "\t(", iters, " / ", niters, ")")
     
     if logging:
@@ -106,40 +106,58 @@ def wanglandau(system,
 
 # ### Parallel construction of the density of states
 
-@jit(nopython=True)
-def find_bin_systems(sys, Es, Ebins, N = 1_000_000):
-    """Find systems with energies in the bins given by `Es` by stepping `sys`."""
-    S = np.zeros(len(Es), dtype=np.int32)
-#     systems = [None] * (len(Ebins) - 1)
+@njit
+def find_bin_systems(system, Es, Ebins, N = 1_000_000, method = 'wl'):
+    """
+    Find systems with energies in the bins given by `Es` by stepping `sys`.
+    
+    Args:
+        system: The initial system to search from. This is usually a ground state.
+        Es: The energies of the system.
+        Ebins: The energy bins to find systems for.
+        N: The maximum number of steps to try.
+        method: The string name of the search method to try.
+            'wl': Wang-Landau steps where we prefer energies we have not visited
+            'increasing': Only accept increases in energy. This only works for
+                steps that are not trapped by local maxima of energy.
+    
+    Returns:
+        A list of independent systems with energies in Ebins.
+    
+    Raises:
+        ValueError: The method argument was invalid.
+        RuntimeError: Bin systems could not be found after N steps.
+    """
+    if method == 'wl':
+        S = np.zeros(len(Es), dtype=np.int32)
+    systems = [None] * (len(Ebins) - 1)
     n = 0
     l = len(Ebins) - 1
-    systems = [sys] * l
+    systems = [system] * l
     empty = np.repeat(True, l)
-    i = binindex(Es, sys.E)
+    i = binindex(Es, system.E)
     while np.any(empty) and n < N:
         for s in range(l):
-            if empty[s] and Ebins[s] <= sys.E < Ebins[s + 1]:
-                systems[s] = sys.copy()
+            if empty[s] and Ebins[s] <= system.E < Ebins[s + 1]:
+                systems[s] = system.copy()
                 empty[s] = False
-#     while np.any(np.array([system is None for system in systems])) and n < N:
-#         for s in range(len(systems)):
-#             if systems[s] is None and Ebins[s] <= sys.E < Ebins[s + 1]:
-#                 systems[s] = sys.copy()
         
-        sys.propose()
-        j = binindex(Es, sys.Eν)
-        # Monotonic steps (not always applicable)
-#         if sys.E < sys.Eν:
-#             sys.accept()
-        # Wang-Landau steps
-        if S[j] < S[i]:
-            i = j
-            sys.accept()
-        S[i] += 1
+        system.propose()
+        j = binindex(Es, system.Eν)
+        if method == 'wl':
+            if S[j] < S[i]:
+                i = j
+                system.accept()
+            S[i] += 1
+        elif method == 'increasing':
+            if system.E < system.Eν:
+                system.accept()
+        else:
+            raise ValueError('Invalid method argument for finding bin systems.')
         n += 1
         
     if N <= n:
-        raise ValueError('Could not find bin systems (hit step limit).')
+        raise RuntimeError('Could not find bin systems (hit step limit).')
     return systems
 
 
@@ -155,11 +173,11 @@ def extend_bin(bins, i, k = 0.05):
 
 # Now we can construct our parallel systems.
 
-def parallel_systems(system, Es, n = 8, k = 0.1, N = 1_000_000):
-    Ebins = np.linspace(Es[0], Es[-1], n + 1)
-    systems = find_bin_systems(system, Es, Ebins, N)
+def parallel_systems(system, Es, bins = 8, overlap = 0.1, steps = 1_000_000):
+    Ebins = np.linspace(Es[0], Es[-1], bins + 1)
+    systems = find_bin_systems(system, Es, Ebins, steps)
     states = [s.state() for s in systems]
-    binEs = [(lambda E0, Ef: Es[(E0 <= Es) & (Es <= Ef)])(*extend_bin(Ebins, i, k))
+    binEs = [(lambda E0, Ef: Es[(E0 <= Es) & (Es <= Ef)])(*extend_bin(Ebins, i, overlap))
              for i in range(len(Ebins) - 1)]
     return zip(states, binEs)
 
@@ -185,7 +203,6 @@ def stitch_results(wlresults):
         # Simplest: join middles of overlap regions
         l = len(i0s)
         m = l // 2
-#         print(l, m, i0s, iνs, i0s[m], S0, Sν)
         Sν -= Sν[iνs[m]] - S0[i0s[m]]
         # Simplest: average the overlaps to produce the final value
         E = np.hstack((E, Eν[l+1:]))

@@ -1,0 +1,25 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\begin{document}
+\nbentry{June 19, 2020}{%
+  Progress summary
+}\label{sec:sum3}
+
+This week, I further prepared to study the thermodynamics of our image systems.
+I derived the exact density of states for the all-black image, and the same
+technique (generating functions) could be used with computer enumeration of
+integer partitions to obtain the density of states for an arbitrary image
+system. I also spent more time improving my implementation of the Wang-Landau
+algorithm. It is now able to simulate arbitrary energy bins and divide different
+energy intervals across multiple \textsc{cpu} cores and combine them back
+together. The python code was made type-stable so that functions and the
+simulation state can be \textsc{jit}ed by a \textsc{llvm}-based compiler
+(\href{https://numba.pydata.org/}{Numba}). These two improvements increased the
+speed of the simulations by more than a factor of 10. With some more tweaks and
+code to automate the preparation of parallel kernels and manage results, we
+should be able to easily perform these simulations for many parameter values
+with high statistics.
+
+\end{document}
+
+
