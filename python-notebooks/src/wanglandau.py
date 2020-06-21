@@ -4,15 +4,16 @@
 # # The Wang-Landau algorithm (density of states)
 # We determine thermodynamic quantities from the partition function by obtaining the density of states from a simulation.
 
-from numba import njit, jit_module
-
-
+from numba import njit
 import numpy as np
-import copy # for parallel systems
-import os, struct # for using `urandom`
 
 
-# Utility functions.
+import sys
+if 'src' not in sys.path: sys.path.append('src')
+import simulation as sim
+
+
+# Utility functions for the simulation.
 
 @njit(cache=True, inline='always')
 def bisect_right(a, x, lo=0, hi=None):
@@ -30,7 +31,7 @@ def bisect_right(a, x, lo=0, hi=None):
 
 @njit(cache=True)
 def binindex(a, x):
-    return bisect_right(a, x, hi=len(a) - 1) - 1
+    return bisect_right(a, x, lo=0, hi=len(a) - 1) - 1
 
 
 @njit(cache=True)
@@ -45,8 +46,8 @@ def flat(H, ε = 0.2):
 # 
 # We use energy bins encoded by numbers $E_i$ for $i \in [0,\, N]$, so that there are $N$ bins. The energies $E$ covered by bin $i$ satisfy $E_i \le E < E_{i+1}$. For the bounded discrete systems that we are considering, we must choose $E_N$ to be an arbitrary number above the maximum energy.
 
-@njit
-def wanglandau(system,
+@njit(cache=True)
+def simulation(system,
                 Es,             # The energy bins
                 M = 1_00_000,   # Monte carlo step scale
                 ε = 1e-10,      # f tolerance
@@ -58,7 +59,6 @@ def wanglandau(system,
         raise ValueError('Invalid Wang-Landau parameter.')
 
     # Initial values
-#     Es = system.Es # Testing
     E0 = Es[0]
     Ef = Es[-1]
     N = len(Es) - 1
@@ -161,53 +161,11 @@ def find_bin_systems(system, Es, Ebins, N = 1_000_000, method = 'wl'):
     return systems
 
 
-# We can choose overlapping bins for the parallel processes to negate boundary effects.
-
-def extend_bin(bins, i, k = 0.05):
-    if len(bins) <= 2: # There is only one bin
-        return bins
-    k = max(0, min(1, k))
-    return (bins[i] - (k*(bins[i] - bins[i-1]) if 0 < i else 0),
-            bins[i+1] + (k*(bins[i+2] - bins[i+1]) if i < len(bins) - 2 else 0))
-
-
-# Now we can construct our parallel systems.
-
-def parallel_systems(system, Es, bins = 8, overlap = 0.1, steps = 1_000_000):
-    Ebins = np.linspace(Es[0], Es[-1], bins + 1)
-    systems = find_bin_systems(system, Es, Ebins, steps)
-    states = [s.state() for s in systems]
-    binEs = [(lambda E0, Ef: Es[(E0 <= Es) & (Es <= Ef)])(*extend_bin(Ebins, i, overlap))
+def parallel_systems(system, bins = 8, overlap = 0.1, steps = 1_000_000, method = 'wl', **kwargs):
+    Es = system.energy_bins() # Intrinsic to the system
+    Ebins = np.linspace(Es[0], Es[-1], bins + 1) # For parallel subsystems
+    systems = find_bin_systems(system, Es, Ebins, steps, method)
+    binEs = [(lambda E0, Ef: Es[(E0 <= Es) & (Es <= Ef)])(*sim.extend_bin(Ebins, i, overlap))
              for i in range(len(Ebins) - 1)]
-    return zip(states, binEs)
-
-
-# We also need a way to reset the random number generator seed in a way that is time-independent and different for each process.
-
-def urandom_reseed():
-    """Reseeds numpy's RNG from `urandom` and returns the seed"""
-    seed = struct.unpack('I', os.urandom(4))[0]
-    np.random.seed(seed)
-    return seed
-
-
-# Once we have parallel results, we stitch the pieces of $\ln g(E)$ together.
-
-def stitch_results(wlresults):
-    E0, S0, _ = wlresults[0]
-    E, S = E0, S0
-    for i in range(1, len(wlresults)):
-        Eν, Sν, _ = wlresults[i]
-        # Assumes overlap is at end regions
-        _, i0s, iνs = np.intersect1d(E0[:-1], Eν[:-1], return_indices=True)
-        # Simplest: join middles of overlap regions
-        l = len(i0s)
-        m = l // 2
-        Sν -= Sν[iνs[m]] - S0[i0s[m]]
-        # Simplest: average the overlaps to produce the final value
-        E = np.hstack((E, Eν[l+1:]))
-        S[-l:] = (Sν[iνs] + S0[i0s]) / 2
-        S = np.hstack((S, Sν[l:]))
-        E0, S0 = Eν, Sν
-    return E, S
+    return zip(systems, binEs)
 

@@ -6,87 +6,21 @@
 from numba import njit
 from numba.experimental import jitclass
 from numba import int64
+integer = int64
 
 
 import numpy as np
 from scipy import interpolate, special
 import os
-import time
 import tempfile
 import h5py, hickle
-from multiprocessing import Pool
-from pprint import pprint
+import pprint
 
 
-# We extend the path instead of using `src.module` to be able to run generated files.
 import sys
 if 'src' not in sys.path: sys.path.append('src')
+import simulation as sim
 import wanglandau as wl
-
-
-integer = int64
-spec = [
-    ('I0', integer[:]),
-    ('I',  integer[:]),
-    ('N',  integer),
-    ('M',  integer),
-#     ('Es', integer[:]),
-    ('E',  integer),
-    ('Eν', integer),
-    ('dE', integer),
-    ('dx', integer),
-    ('i',  integer)
-]
-
-@jitclass(spec)
-class StatisticalImage:
-    def __init__(self, I0, I, M):
-        if len(I0) != len(I):
-            raise ValueError('Ground image I0 and current image I should have the same length.')
-        if M < 0:
-            raise ValueError('Maximum site value must be nonnegative.')
-        self.I0 = I0
-        self.I  = I
-        self.N  = len(I0)
-        self.M  = M
-#         self.Es = self.energy_bins()
-        self.E  = self.energy()
-        self.Eν = self.E
-        self.dE = 0
-        self.dx = 0
-        self.i  = 0
-    def state(self):
-        return self.I0.copy(), self.I.copy(), self.M
-    def state_names(self):
-        return 'I0', 'I', 'M'
-    def copy(self):
-        return StatisticalImage(*self.state())
-    def energy_bins(self):
-        E0 = 0
-        Ef = np.sum(np.maximum(self.I0, self.M - self.I0))
-        ΔE = 1
-        return np.arange(E0, Ef + ΔE + 1, ΔE)
-    def energy(self):
-        return np.sum(np.abs(self.I - self.I0))
-    def propose(self):
-        i = np.random.randint(self.N)
-        self.i = i
-        x0 = self.I0[i]
-        x = self.I[i]
-        r = np.random.randint(2)
-        if x == 0:
-            dx = r
-        elif x == self.M:
-            dx = -r
-        else:
-            dx = 2*r - 1
-        dE = np.abs(dx) if x0 == x else (dx if x0 < x else -dx)
-        self.dx = dx
-        self.dE = dE
-        self.Eν = self.E + dE
-    def accept(self):
-        self.I[self.i] += self.dx
-        self.E = self.Eν
 
 
 # ### Parallel Simulation
@@ -95,14 +29,11 @@ N = 16
 Moff = 0
 I0 = Moff * np.ones(N, dtype=int)
 system_parameters = {
-    'I0': I0,
-    'I': I0.copy(),
-    'M': 2**5 - 1
-}
-parallel_parameters = {
-    'bins': 8,
-    'overlap': 0.5,
-    'steps': 1_000_000
+    'StatisticalImage': {
+        'I0': I0,
+        'I': I0.copy(),
+        'M': 2**5 - 1
+    }
 }
 wl_parameters = {
     'M': 1_000_000,
@@ -111,60 +42,46 @@ wl_parameters = {
     'flatness': 0.1,
     'logging': False
 }
-
-system = StatisticalImage(**system_parameters) # Intermediate value
-Es = system.energy_bins()
-
-
-print('Parallel Wang-Landau simulation with')
-for k, v in wl_parameters.items():
-    print("\t", k, '\t', v)
-print('on a {}.'.format(system.__class__.__name__))
-
-
-def parallel_wanglandau(subsystem): # Convenient form for `Pool.map`
-    wl.urandom_reseed()
-    state, Es = subsystem
-    system = StatisticalImage(*state)
-    print('(', end='', flush=True)
-#     results = wl.wanglandau(system, Es, M = wlM, ε = 1e-8, logging=False)
-    results = wl.wanglandau(system, Es, **wl_parameters)
-    print(')', end='', flush=True)
-    return results
+parallel_parameters = {
+    'bins': 8,
+    'overlap': 0.5,
+    'steps': 1_000_000,
+    'logging': True
+}
+parameters = {
+    'system': system_parameters,
+    'simulation': wl_parameters,
+    'parallel': parallel_parameters
+}
 
 
-print('Finding parallel bin systems ... ', end='', flush=True)
-psystems = wl.parallel_systems(system, Es, **parallel_parameters)
-print('done.')
+print('Run parameters')
+print('--------------')
+pprint.pp(parameters, sort_dicts=False)
+print()
 
 
-print('Running | ', end='', flush=True)
-start_time = time.time()
-with Pool() as pool:
-    wlresults = pool.map(parallel_wanglandau, psystems)
-print(' | done in', int(time.time() - start_time), 'seconds.')
+psystems = sim.make_psystems(wl.parallel_systems, parameters)
 
 
-sEs, sS = wl.stitch_results(wlresults)
+wlresults = sim.run_parallel(wl.simulation, psystems, parameters)
+
+
+sEs, sS = sim.join_results([(Es, S) for Es, S, _ in wlresults])
 
 
 with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-image-', suffix='.hdf5', dir='data', delete=False) as f:
     with h5py.File(f, 'w') as hkl:
         print('Writing results ... ', end='', flush=True)
-        d = {}
-        for k, v in zip(system.state_names(), system.state()):
-            d.update({k: v})
         hickle.dump({
-            'parameters': {
-                'system': d,
-                'wanglandau': {},
-                'parallel': {}
-            },
+            'parameters': parameters,
             'results': {
-                'Es': sEs,
-                'S': sS
+                'composite': {
+                    'Es': sEs,
+                    'S': sS                    
+                },
+                'parallel': wlresults # make dict of Es, S, H?
             },
-            'parallel_results': wlresults
         }, hkl)
         print('done: {}'.format(os.path.relpath(f.name)))
 
@@ -174,7 +91,7 @@ with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-image-', suffix='.
 import matplotlib.pyplot as plt
 
 
-N, M = len(system_parameters['I0']), system_parameters['M']
+N, M = len(system_parameters['StatisticalImage']['I0']), system_parameters['StatisticalImage']['M']
 
 
 for Es, S, H in wlresults:
