@@ -2,23 +2,17 @@
 
 \begin{document}
 \nbentry{June 18, 2020}{%
-  Simulations for canonical ensemble averages
+  Comparison to Wang and Landau's results
 }
 
-The most promising seem to be:
-
-\begin{itemize}
-  \item Wang-Landau
-  \item Parallel tempering (replica exchange \textsc{mcmc}).
-\end{itemize}
-
-\subfile{../python-notebooks/tex/systems}
-\subfile{../python-notebooks/tex/statistical_image}
-\subfile{../python-notebooks/tex/simulation}
-\subfile{../python-notebooks/tex/wanglandau}
-\subfile{../python-notebooks/tex/wanglandau-image}
-\subfile{../python-notebooks/tex/wanglandau-thermodynamics}
+\begin{figure}[h]
+  \centering
+  \includegraphics{ising-compare}
+  \caption{Our results agree with Wang and Landau's results, though it took more
+  iterations than they reported to reproduce.}\label{fig:ising-compare}
+\end{figure}
 
 \end{document}
+
 
 

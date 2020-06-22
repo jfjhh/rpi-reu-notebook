@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Systems for organized simulation
+# ## Systems for organized simulation
 
 import sys
 if 'src' not in sys.path: sys.path.append('src')
@@ -10,15 +10,17 @@ if 'src' not in sys.path: sys.path.append('src')
 # List of imports for all relevant systems.
 
 from statistical_image import *
+from ising_model import *
 
 
-# ## Specification
+# ### Specification
 # 
-# **TODO:**
+# **Extensions**
+# 
 # - Encode this specification and the requirements of simulations as abstract base classes?
 # - Consider changing to [`numba.typed.Dict`](https://numba.pydata.org/numba-doc/dev/reference/pysupported.html#typed-dict) in the future if the API is guaranteed to be stable.
 # 
-# A system for simulation is a [Numba `jitclass`](http://numba.pydata.org/numba-doc/latest/user/jitclass.html) that implements `state`, `state_names`, and `copy` functions. Given an instance `s` of a system class `System`, these function should satisfy
+# A system for simulation is a [Numba `jitclass`](http://numba.pydata.org/numba-doc/latest/user/jitclass.html) that implements `state`, `state_names`, and `copy` functions. Given an instance `s` of a system class `System`, these functions should satisfy
 # ```python
 # id_systems = [
 #     s,
@@ -35,5 +37,7 @@ from statistical_image import *
 #         return self.__class__(*self.state())
 # ```
 # In addition, different simulations may require more methods to be implemented.
+# 
 # ### Wang-Landau
-# A Wang-Landau simulation requires a `System` to have the variables `E` and `Eν` and to implement the methods `energy_bins`, `energy`, `propose`, and `accept`.
+# 
+# A Wang-Landau simulation requires a `System` to have the variables `E`, `Eν`, and `sweep_steps`, and to implement the methods `energy_bins`, `energy`, `propose`, and `accept`.

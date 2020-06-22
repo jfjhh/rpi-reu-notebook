@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[10pt]{article}
 
 % Core packages
 \usepackage[intlimits]{mathtools} % Load before newtxmath
@@ -22,6 +22,8 @@
   \protect\section[#2 (#1)]{#2}
   \nbdate{#1}
 }
+\providecommand{\tightlist}{% Used by Pandoc
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
 
 \usepackage{amsthm}
 \theoremstyle{plain}

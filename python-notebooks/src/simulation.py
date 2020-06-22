@@ -1,7 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Organized parallel simulations
+# ## Organized parallel simulations
+# 
+# We need some utility functions that
+# 
+# - Manage passing simulation parameters to parallel processes
+# - Run the parallel processes with correct input and distinct random states
+# - Save parameters and results to files automatically (without overwriting previous results)
+# - Log results while running simulations
+# - Join parallel results back together
+# 
+# Since the simulation systems (Numba `jitclass` objects) are not picklable (Python's serialization used to communicate between processes by `multiprocessing`), the relevant parameters to reconstruct a system are passed between processes. We require that all systems be accessible from the `systems` module, so that we may pass and save the class name as a way of accessing the specification of the system.
 
 import numpy as np
 from multiprocessing import Pool
@@ -13,8 +23,6 @@ import pprint # for parameters
 import tempfile
 import h5py, hickle
 
-
-# Since the Numba `jitclass` objects are not picklable, the relevant parameters to reconstruct a system are passed between processes. We require that all systems be accessible from the `systems` module.
 
 if 'src' not in sys.path: sys.path.append('src')
 import systems
@@ -136,6 +144,13 @@ def extend_bin(bins, i, k = 0.05):
 
 
 # Often parallel results are the value of a real function on some grid or list of bins. Given that many of these pieces may overlap, we must combine them back together into a full solution. This requires first transforming the results so that they are comparable, and then performing the combination. The most common case is repetition of the same real-valued experiment. No transformation is required, and we simply average all the results. Even better, we may assign the values within each piece a varying credence from 0 to 1 and perform weighted sums.
+# 
+# We must join results that are only known up to an additive constant. We must then assign an offset to each solution, where one of the offsets may be taken to be zero without loss of generality. The algorithm below implements the offsets that minimize the weighted mean-squared error of the overlap regions
+# $$
+# \varepsilon
+# = \sum_{i<j,\, k} {((y_{ik} + c_i) - (y_{jk} + c_j))}^2 w_{ik} w_{jk},
+# $$
+# where $i$ and $j$ index different (overlapping) results, $k$ indexes the full grid, and $w_{ik}$ is the nonnegative weight assigned to index $k$ of result $i$. Since we usually have results defined on a subset of the whole grid, we assign weights to the subset and set the other weights to be zero, so that the missing values $y_{ik}$ outside the known subset are irrelevant.
 
 def join_results(xs, ys, wf = windows.hann):
     xf = np.array(sorted(set().union(*xs)))

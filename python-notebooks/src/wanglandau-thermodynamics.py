@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# ## Calculating canonical ensemble averages
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -12,17 +14,21 @@ if 'src' not in sys.path: sys.path.append('src')
 import wanglandau as wl
 
 
-# ### Calculating canonical ensemble averages
-
 class CanonicalEnsemble:
-    def __init__(self, Es, gs, name):
+    def __init__(self, Es, lngs, name, λ = None):
         self.Es = Es
-        self.gs = gs
+        self.lngs = lngs
         self.name = name
+        # Choose to scale the exponent of Z to be a convenient size.
+        # This can be improved if needed by taking into account typical β*Es.
+        self.λ = max(lngs) if λ is None else λ
+    def Zλ(self, β):
+        return np.sum(np.exp(-(β * self.Es - self.lngs + self.λ)))
     def Z(self, β):
-        return np.sum(self.gs * np.exp(-β * self.Es))
+        return np.exp(self.λ) * self.Zλ(β)
     def average(self, f, β):
-        return np.sum(f(self) * self.gs * np.exp(-β * self.Es)) / self.Z(β)
+#         return np.sum(f(self) * self.gs * np.exp(-β * self.Es)) / self.Z(β)
+        return np.sum(f(self) * np.exp(-(β * self.Es - self.lngs + self.λ))) / self.Zλ(β)
     def energy(self, β):
         return self.average(lambda ens: ens.Es, β)
     def energy2(self, β):
@@ -43,11 +49,10 @@ with h5py.File('data/simulation-l3t1t_sn.h5', 'r') as f:
 
 N, M = len(params['system']['StatisticalImage']['I0']), params['system']['StatisticalImage']['M']
 wlEs, S, ΔS = wl.join_results(results)
-wlgs = np.exp(S - min(S))
 
 
 βs = [np.exp(k) for k in np.linspace(-8, 2, 500)]
-wlens = CanonicalEnsemble(wlEs, wlgs, 'WL') # Wang-Landau results
+wlens = CanonicalEnsemble(wlEs, S - min(S), 'WL') # Wang-Landau results
 # xens = CanonicalEnsemble(Es, gs, 'Exact') # Exact
 # ensembles = [wlens, xens]
 ensembles = [wlens]

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # System: Statistical Image
+# ### System: Statistical Image
 
 import numpy as np
 from numba.experimental import jitclass
@@ -15,6 +15,7 @@ __all__ = ['StatisticalImage']
     ('I',  integer[:]),
     ('N',  integer),
     ('M',  integer),
+    ('sweep_steps', integer),
     ('E',  integer),
     ('Eν', integer),
     ('dE', integer),
@@ -31,6 +32,7 @@ class StatisticalImage:
         self.I  = I
         self.N  = len(I0)
         self.M  = M
+        self.sweep_steps = len(I0)
         self.E  = self.energy()
         self.Eν = self.E
         self.dE = 0

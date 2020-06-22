@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # The Wang-Landau algorithm (density of states)
+# ## The Wang-Landau algorithm (density of states)
 # We determine thermodynamic quantities from the partition function by obtaining the density of states from a simulation.
 
 from numba import njit
@@ -40,7 +40,7 @@ def flat(H, ε = 0.2):
     return not np.any(H < (1 - ε) * np.mean(H)) and np.all(H != 0)
 
 
-# ## Algorithm
+# ### Algorithm
 
 # A Wang-Landau algorithm, with quantities as logarithms and with monte-carlo steps proportional to $f^{-1/2}$ (a "Zhou-Bhat schedule").
 # 
@@ -51,33 +51,69 @@ def system_prep(system):
 
 
 @njit
-def simulation(system,
-                Es,             # The energy bins
-                M = 1_000_000,  # Monte carlo step scale
-                eps = 1e-8,     # f tolerance
-                logf0 = 1,      # Initial log f
-                flatness = 0.2, # Desired histogram flatness
-                log = False     # Log progress of f-steps
+def simulation(system, Es,
+                max_sweeps = 1_000_000,
+                flat_sweeps = 1,
+                eps = 1e-8,
+                logf0 = 1,
+                flatness = 0.2,
+                log = False
                ):
-    if M <= 0 or eps <= 1e-16 or not (0 < logf0 <= 1) or not (0 <= flatness < 1):
+    """
+    Run a Wang-Landau simulation on system with energy bins Es to determine
+    the system density of states g(E).
+    
+    Args:
+        system: The system to perform the simulation on (see systems module).
+        Es: The energy bins of the system to access. May be a subset of all bins.
+        max_sweeps: The scale for the maximum number of MC sweeps per f-iteration.
+            The actual maximum iterations may be fewer, but approaches max_sweeps
+            exponentially as the algorithm executes. 
+        flat_sweeps: The number of sweeps between checks for histogram flatness.
+            In AJP [10.1119/1.1707017], Landau et. al. use 10_000 sweeps.
+        eps: The desired tolerance in f. Wang and Landau [WL] use 1e-8 in the original
+            paper [10.1103/PhysRevLett.86.2050].
+        logf0: The initial value of ln(f). WL set to 1.
+        flatness: The desired flatness of the histogram. WL set to 0.2 (80% flatness).
+        log: Whether or not to print results of each f-iteration.
+    
+    Returns:
+        A tuple of results with entries:
+        Es: The energy bins the algorithm was passed.
+        S: The logarithm of the density of states (microcanonical entropy).
+        H: The histogram from the last f-iteration.
+        converged: True if each f-iteration took fewer than the maximum sweeps.
+    
+    Raises:
+        ValueError: One of the parameters was invalid.
+    """
+    if (max_sweeps <= 0
+        or flat_sweeps <= 0
+        or eps <= 1e-16
+        or not (0 < logf0 <= 1)
+        or not (0 <= flatness < 1)):
         raise ValueError('Invalid Wang-Landau parameter.')
 
     # Initial values
-    E0 = Es[0]
-    Ef = Es[-1]
-    N = len(Es) - 1
-    logf = 2 * logf0
+    M = max_sweeps * system.sweep_steps
+    flat_iters = flat_sweeps * system.sweep_steps
+    logf = 2 * logf0 # Compensate for first loop iteration
     logftol = np.log(1 + eps)
-    S = np.zeros(N) # Set all initial g's to 1
-    H = np.zeros(N, dtype=np.int32)
-    i = binindex(Es, system.E)
     converged = True
     steps = 0
     
+    E0 = Es[0]
+    Ef = Es[-1]
+    N = len(Es) - 1
+    S = np.zeros(N) # Set all initial g's to 1
+    H = np.zeros(N, dtype=np.int32)
+    i = binindex(Es, system.E)
+    
     if log:
         fiter = 0
-        fiters = int(np.ceil(np.log2(logf0) - np.log2(logftol)))
         print("Wang-Landau START")
+        print("fiter\t steps\t\t max steps")
+        print("-----\t -----\t\t ---------")
     
     while logftol < logf:
         H[:] = 0
@@ -86,12 +122,12 @@ def simulation(system,
         niters = int((M + 1) * np.exp(-logf / 2))
         if log:
             fiter += 1
-        while not flat(H, flatness) and iters < niters:
+        while (iters % flat_iters != 0 or not flat(H, flatness)) and iters < niters:
             system.propose()
             Eν = system.Eν
             j = binindex(Es, Eν)
             if E0 <= Eν < Ef and (
-                S[j] < S[i] or np.random.rand() < np.exp(S[i] - S[j])):
+                S[j] < S[i] or np.random.rand() <= np.exp(S[i] - S[j])):
                 system.accept()
                 i = j
             H[i] += 1
@@ -101,10 +137,11 @@ def simulation(system,
         if niters <= iters:
             converged = False
         if log:
-            print("f: ", fiter, " / ", fiters, "\t(", iters, " / ", niters, ")")
+            print(fiter, "\t", iters, "\t", niters)
     
     if log:
-        print("Done: ", steps, " total MC iterations.")
+        print("Done: ", steps, " total MC iterations;",
+              "converged." if converged else "not converged.")
     return Es, S, H, steps, converged
 
 
@@ -112,10 +149,10 @@ def wrap_results(results):
     return {k: v for k, v in zip(('Es', 'S', 'H', 'steps', 'converged'), results)}
 
 
-# ### Parallel construction of the density of states
+# ### Parallel decomposition
 
 @njit
-def find_bin_systems(system, Es, Ebins, N = 1_000_000, method = 'wl'):
+def find_bin_systems(system, Es, Ebins, sweeps = 1_000_000, method = 'wl'):
     """
     Find systems with energies in the bins given by `Es` by stepping `sys`.
     
@@ -123,7 +160,7 @@ def find_bin_systems(system, Es, Ebins, N = 1_000_000, method = 'wl'):
         system: The initial system to search from. This is usually a ground state.
         Es: The energies of the system.
         Ebins: The energy bins to find systems for.
-        N: The maximum number of steps to try.
+        sweeps: The maximum number of MC sweeps to try.
         method: The string name of the search method to try.
             'wl': Wang-Landau steps where we prefer energies we have not visited
             'increasing': Only accept increases in energy. This only works for
@@ -140,6 +177,7 @@ def find_bin_systems(system, Es, Ebins, N = 1_000_000, method = 'wl'):
         S = np.zeros(len(Es), dtype=np.int32)
     systems = [None] * (len(Ebins) - 1)
     n = 0
+    N = sweeps * system.sweep_steps
     l = len(Ebins) - 1
     systems = [system] * l
     empty = np.repeat(True, l)
@@ -169,10 +207,10 @@ def find_bin_systems(system, Es, Ebins, N = 1_000_000, method = 'wl'):
     return systems
 
 
-def psystem_prep(system, bins = 8, overlap = 0.1, steps = 1_000_000, method = 'wl', **kwargs):
+def psystem_prep(system, bins = 8, overlap = 0.1, sweeps = 1_000_000, method = 'wl', **kwargs):
     Es = system.energy_bins() # Intrinsic to the system
     Ebins = np.linspace(Es[0], Es[-1], bins + 1) # For parallel subsystems
-    systems = find_bin_systems(system, Es, Ebins, steps, method)
+    systems = find_bin_systems(system, Es, Ebins, sweeps, method)
     binEs = [(lambda E0, Ef: Es[(E0 <= Es) & (Es <= Ef)])(*sim.extend_bin(Ebins, i, overlap))
              for i in range(len(Ebins) - 1)]
     return zip(systems, binEs)

@@ -26,29 +26,39 @@ import wanglandau as wl
 # ### Parallel Simulation
 
 N = 16
+M = 2**5 - 1
 Moff = 0
 I0 = Moff * np.ones(N, dtype=int)
 system_params = {
     'StatisticalImage': {
         'I0': I0,
         'I': I0.copy(),
-        'M': 2**5 - 1
+        'M': M
     }
 }
+
+
+# L = 16
+# system_params = {
+#     'IsingModel': {
+#         'spins': np.ones((L, L), dtype=int)
+#     }
+# }
 
 
 params = {
     'system': system_params,
     'simulation': {
-        'M': 1_000_000,
-        'eps': 1e-8,
+        'max_sweeps': 10_000_000,
+        'flat_sweeps': 10_000,
+        'eps': 1e-9,
         'logf0': 1,
-        'flatness': 0.2
+        'flatness': 0.1
     },
     'parallel': {
         'bins': 2,
         'overlap': 0.25,
-        'steps': 1_000_000
+        'sweeps': 1_000_000
     },
     'save': {
         'prefix': 'simulation-',
@@ -57,14 +67,11 @@ params = {
 }
 
 
-# params.pop('parallel', None) # Single run
+params.pop('parallel', None) # Single run
 wlresults = wl.run(params, log=True)
 
 
 wlEs, S, ΔS = wl.join_results(wlresults['results'])
-
-
-[(r['steps'], r['converged']) for r in wlresults['results']]
 
 
 # ### Results
@@ -130,19 +137,18 @@ Es, gs = bw_Es, bw_gs
 
 plt.plot(bw_Es / len(bw_Es), np.log(bw_gs), 'black', label='BW')
 plt.plot(gray_Es / len(gray_Es), np.log(gray_gs), 'gray', label='Gray')
-plt.plot(wlEs / len(wlEs), np.log(wlgs), label='WL')
+plt.plot(wlEs / len(wlEs), S - min(S), label='WL')
 plt.xlabel('E / MN')
 plt.ylabel('ln g')
 plt.title('N = {}, M = {}'.format(N, M))
 plt.legend();
 
 
-# plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
-plt.title('Relative error')
-plt.plot(wlEs / len(wlEs), S - np.log(bw_gs) - min(S))
-plt.title('Residuals')
-plt.xlabel('E / MN')
-plt.ylabel('ε(S)');
+plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
+plt.ylabel('Relative error')
+# plt.plot(wlEs / len(wlEs), S - np.log(bw_gs) - min(S))
+# plt.ylabel('Residuals')
+plt.xlabel('E / MN');
 
 
 print('End of job.')
