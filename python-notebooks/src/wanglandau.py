@@ -15,7 +15,7 @@ import simulation as sim
 
 # Utility functions for the simulation.
 
-@njit(cache=True, inline='always')
+@njit(inline='always')
 def bisect_right(a, x, lo=0, hi=None):
     if lo < 0:
         raise ValueError('lo must be non-negative')
@@ -29,12 +29,12 @@ def bisect_right(a, x, lo=0, hi=None):
             lo = mid + 1
     return lo
 
-@njit(cache=True)
+@njit
 def binindex(a, x):
     return bisect_right(a, x, lo=0, hi=len(a) - 1) - 1
 
 
-@njit(cache=True)
+@njit
 def flat(H, ε = 0.2):
     """Determines if a histogram is approximately flat to within ε of the mean height."""
     return not np.any(H < (1 - ε) * np.mean(H)) and np.all(H != 0)
@@ -46,16 +46,20 @@ def flat(H, ε = 0.2):
 # 
 # We use energy bins encoded by numbers $E_i$ for $i \in [0,\, N]$, so that there are $N$ bins. The energies $E$ covered by bin $i$ satisfy $E_i \le E < E_{i+1}$. For the bounded discrete systems that we are considering, we must choose $E_N$ to be an arbitrary number above the maximum energy.
 
-@njit(cache=True)
+def system_prep(system):
+    return system, system.energy_bins()
+
+
+@njit
 def simulation(system,
                 Es,             # The energy bins
-                M = 1_00_000,   # Monte carlo step scale
-                ε = 1e-10,      # f tolerance
+                M = 1_000_000,  # Monte carlo step scale
+                eps = 1e-8,     # f tolerance
                 logf0 = 1,      # Initial log f
-                flatness = 0.1, # Desired histogram flatness
-                logging = False # Log progress of f-steps
+                flatness = 0.2, # Desired histogram flatness
+                log = False     # Log progress of f-steps
                ):
-    if M <= 0 or ε <= 1e-16 or not (0 < logf0 <= 1) or not (0 <= flatness < 1):
+    if M <= 0 or eps <= 1e-16 or not (0 < logf0 <= 1) or not (0 <= flatness < 1):
         raise ValueError('Invalid Wang-Landau parameter.')
 
     # Initial values
@@ -63,14 +67,14 @@ def simulation(system,
     Ef = Es[-1]
     N = len(Es) - 1
     logf = 2 * logf0
-    logftol = np.log(1 + ε)
+    logftol = np.log(1 + eps)
     S = np.zeros(N) # Set all initial g's to 1
     H = np.zeros(N, dtype=np.int32)
     i = binindex(Es, system.E)
     converged = True
+    steps = 0
     
-    if logging:
-        mciters = 0
+    if log:
         fiter = 0
         fiters = int(np.ceil(np.log2(logf0) - np.log2(logftol)))
         print("Wang-Landau START")
@@ -80,7 +84,7 @@ def simulation(system,
         logf /= 2
         iters = 0
         niters = int((M + 1) * np.exp(-logf / 2))
-        if logging:
+        if log:
             fiter += 1
         while not flat(H, flatness) and iters < niters:
             system.propose()
@@ -93,15 +97,19 @@ def simulation(system,
             H[i] += 1
             S[i] += logf
             iters += 1
-        mciters += iters
+        steps += iters
         if niters <= iters:
             converged = False
-        if logging:
+        if log:
             print("f: ", fiter, " / ", fiters, "\t(", iters, " / ", niters, ")")
     
-    if logging:
-        print("Done: ", mciters, " total MC iterations.")
-    return Es, S, H
+    if log:
+        print("Done: ", steps, " total MC iterations.")
+    return Es, S, H, steps, converged
+
+
+def wrap_results(results):
+    return {k: v for k, v in zip(('Es', 'S', 'H', 'steps', 'converged'), results)}
 
 
 # ### Parallel construction of the density of states
@@ -161,11 +169,19 @@ def find_bin_systems(system, Es, Ebins, N = 1_000_000, method = 'wl'):
     return systems
 
 
-def parallel_systems(system, bins = 8, overlap = 0.1, steps = 1_000_000, method = 'wl', **kwargs):
+def psystem_prep(system, bins = 8, overlap = 0.1, steps = 1_000_000, method = 'wl', **kwargs):
     Es = system.energy_bins() # Intrinsic to the system
     Ebins = np.linspace(Es[0], Es[-1], bins + 1) # For parallel subsystems
     systems = find_bin_systems(system, Es, Ebins, steps, method)
     binEs = [(lambda E0, Ef: Es[(E0 <= Es) & (Es <= Ef)])(*sim.extend_bin(Ebins, i, overlap))
              for i in range(len(Ebins) - 1)]
     return zip(systems, binEs)
+
+
+def run(params, **kwargs):
+    return sim.run(params, simulation, system_prep, psystem_prep, wrap_results, **kwargs)
+
+
+def join_results(results, *args, **kwargs):
+    return sim.join_results(*zip(*[(r['Es'][:-1], r['S']) for r in results]), *args, **kwargs)
 

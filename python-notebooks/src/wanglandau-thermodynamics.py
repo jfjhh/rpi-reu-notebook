@@ -7,6 +7,11 @@ import os
 import h5py, hickle
 
 
+import sys
+if 'src' not in sys.path: sys.path.append('src')
+import wanglandau as wl
+
+
 # ### Calculating canonical ensemble averages
 
 class CanonicalEnsemble:
@@ -30,12 +35,15 @@ class CanonicalEnsemble:
         return β * self.energy(β) + np.log(self.Z(β))
 
 
-with h5py.File('data/wlresults-image-6_4jpbol.hdf5', 'r') as f:
-    results = hickle.load(f)
+with h5py.File('data/simulation-l3t1t_sn.h5', 'r') as f:
+    h = hickle.load(f)
+    results = h['results']
+    params = h['parameters']
 
 
-N, M = results['N'], results['M']
-wlEs, wlgs = results['sEs'][:-1], np.exp(results['sS'])
+N, M = len(params['system']['StatisticalImage']['I0']), params['system']['StatisticalImage']['M']
+wlEs, S, ΔS = wl.join_results(results)
+wlgs = np.exp(S - min(S))
 
 
 βs = [np.exp(k) for k in np.linspace(-8, 2, 500)]

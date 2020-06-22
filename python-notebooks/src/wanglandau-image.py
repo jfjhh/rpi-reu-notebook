@@ -28,62 +28,43 @@ import wanglandau as wl
 N = 16
 Moff = 0
 I0 = Moff * np.ones(N, dtype=int)
-system_parameters = {
+system_params = {
     'StatisticalImage': {
         'I0': I0,
         'I': I0.copy(),
         'M': 2**5 - 1
     }
 }
-wl_parameters = {
-    'M': 1_000_000,
-    'ε': 1e-10,
-    'logf0': 1,
-    'flatness': 0.1,
-    'logging': False
+
+
+params = {
+    'system': system_params,
+    'simulation': {
+        'M': 1_000_000,
+        'eps': 1e-8,
+        'logf0': 1,
+        'flatness': 0.2
+    },
+    'parallel': {
+        'bins': 2,
+        'overlap': 0.25,
+        'steps': 1_000_000
+    },
+    'save': {
+        'prefix': 'simulation-',
+        'dir': 'data'
+    }
 }
-parallel_parameters = {
-    'bins': 8,
-    'overlap': 0.5,
-    'steps': 1_000_000,
-    'logging': True
-}
-parameters = {
-    'system': system_parameters,
-    'simulation': wl_parameters,
-    'parallel': parallel_parameters
-}
 
 
-print('Run parameters')
-print('--------------')
-pprint.pp(parameters, sort_dicts=False)
-print()
+# params.pop('parallel', None) # Single run
+wlresults = wl.run(params, log=True)
 
 
-psystems = sim.make_psystems(wl.parallel_systems, parameters)
+wlEs, S, ΔS = wl.join_results(wlresults['results'])
 
 
-wlresults = sim.run_parallel(wl.simulation, psystems, parameters)
-
-
-sEs, sS = sim.join_results([(Es, S) for Es, S, _ in wlresults])
-
-
-with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-image-', suffix='.hdf5', dir='data', delete=False) as f:
-    with h5py.File(f, 'w') as hkl:
-        print('Writing results ... ', end='', flush=True)
-        hickle.dump({
-            'parameters': parameters,
-            'results': {
-                'composite': {
-                    'Es': sEs,
-                    'S': sS                    
-                },
-                'parallel': wlresults # make dict of Es, S, H?
-            },
-        }, hkl)
-        print('done: {}'.format(os.path.relpath(f.name)))
+[(r['steps'], r['converged']) for r in wlresults['results']]
 
 
 # ### Results
@@ -91,14 +72,11 @@ with tempfile.NamedTemporaryFile(mode='wb', prefix='wlresults-image-', suffix='.
 import matplotlib.pyplot as plt
 
 
-N, M = len(system_parameters['StatisticalImage']['I0']), system_parameters['StatisticalImage']['M']
+N, M = len(system_params['StatisticalImage']['I0']), system_params['StatisticalImage']['M']
 
 
-for Es, S, H in wlresults:
-    plt.plot(Es[:-1], S)
-
-
-wlEs, S = sEs[:-1], sS
+for i, r in enumerate(wlresults['results']):
+    plt.plot(r['Es'][:-1], r['S'] + ΔS[i])
 
 
 # Fit a spline to interpolate and optionally clean up noise, giving WL g's up to a normalization constant.
@@ -159,8 +137,10 @@ plt.title('N = {}, M = {}'.format(N, M))
 plt.legend();
 
 
-plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
+# plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
 plt.title('Relative error')
+plt.plot(wlEs / len(wlEs), S - np.log(bw_gs) - min(S))
+plt.title('Residuals')
 plt.xlabel('E / MN')
 plt.ylabel('ε(S)');
 
