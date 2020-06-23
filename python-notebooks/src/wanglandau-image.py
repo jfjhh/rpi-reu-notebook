@@ -3,23 +3,12 @@
 
 # ## Thermal calculations on images
 
-from numba import njit
-from numba.experimental import jitclass
-from numba import int64
-integer = int64
-
-
 import numpy as np
 from scipy import interpolate, special
-import os
-import tempfile
-import h5py, hickle
-import pprint
 
 
 import sys
 if 'src' not in sys.path: sys.path.append('src')
-import simulation as sim
 import wanglandau as wl
 
 
@@ -27,8 +16,7 @@ import wanglandau as wl
 
 N = 16
 M = 2**5 - 1
-Moff = 0
-I0 = Moff * np.ones(N, dtype=int)
+I0 = np.zeros(N, dtype=int)
 system_params = {
     'StatisticalImage': {
         'I0': I0,
@@ -49,14 +37,14 @@ system_params = {
 params = {
     'system': system_params,
     'simulation': {
-        'max_sweeps': 10_000_000,
+        'max_sweeps': 500_000_000,
         'flat_sweeps': 10_000,
-        'eps': 1e-9,
+        'eps': 1e-8,
         'logf0': 1,
         'flatness': 0.1
     },
     'parallel': {
-        'bins': 2,
+        'bins': 8,
         'overlap': 0.25,
         'sweeps': 1_000_000
     },
@@ -71,6 +59,9 @@ params.pop('parallel', None) # Single run
 wlresults = wl.run(params, log=True)
 
 
+[r['converged'] for r in wlresults['results']]
+
+
 wlEs, S, ΔS = wl.join_results(wlresults['results'])
 
 
@@ -79,11 +70,11 @@ wlEs, S, ΔS = wl.join_results(wlresults['results'])
 import matplotlib.pyplot as plt
 
 
-N, M = len(system_params['StatisticalImage']['I0']), system_params['StatisticalImage']['M']
-
-
 for i, r in enumerate(wlresults['results']):
     plt.plot(r['Es'][:-1], r['S'] + ΔS[i])
+
+
+N, M = len(system_params['StatisticalImage']['I0']), system_params['StatisticalImage']['M']
 
 
 # Fit a spline to interpolate and optionally clean up noise, giving WL g's up to a normalization constant.
@@ -92,8 +83,8 @@ gspl = interpolate.splrep(wlEs, S, s=0*np.sqrt(2))
 wlgs = np.exp(interpolate.splev(wlEs, gspl) - min(S))
 
 
-# ### Exact solution
-
+# ### Exact density of states
+# 
 # We only compute to halfway since $g$ is symmetric and the other half's large numbers cause numerical instability.
 
 def reflect(a, center=True):
@@ -144,10 +135,10 @@ plt.title('N = {}, M = {}'.format(N, M))
 plt.legend();
 
 
-plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
-plt.ylabel('Relative error')
-# plt.plot(wlEs / len(wlEs), S - np.log(bw_gs) - min(S))
-# plt.ylabel('Residuals')
+# plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)
+# plt.ylabel('Relative error')
+plt.plot(wlEs / len(wlEs), S - np.log(bw_gs) - min(S))
+plt.ylabel('Residuals')
 plt.xlabel('E / MN');
 
 

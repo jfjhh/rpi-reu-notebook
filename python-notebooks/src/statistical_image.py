@@ -4,6 +4,7 @@
 # ### System: Statistical Image
 
 import numpy as np
+from scipy import special
 from numba.experimental import jitclass
 from numba import int64
 integer = int64
@@ -70,4 +71,24 @@ class StatisticalImage:
     def accept(self):
         self.I[self.i] += self.dx
         self.E = self.Eν
+
+
+# ### Exact density of states
+# 
+# We only compute to halfway since $g$ is symmetric and the other half's large numbers cause numerical instability.
+
+def reflect(a, center=True):
+    if center:
+        return np.hstack([a[:-1], a[-1], a[-2::-1]])
+    else:
+        return np.hstack([a, a[::-1]])
+
+
+def bw_g(E, N, M, exact=True):
+    return sum((-1)**k * special.comb(N, k, exact=exact) * special.comb(E + N - 1 - k*(M + 1), E - k*(M + 1), exact=exact)
+        for k in range(int(E / M) + 1))
+def exact_bw_gs(N, M):
+    Es = np.arange(N*M + 1)
+    gs = np.vectorize(bw_g)(np.arange(1 + N*M // 2), N, M, exact=False)
+    return Es, reflect(gs, len(Es) % 2 == 1)
 
