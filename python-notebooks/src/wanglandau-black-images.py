@@ -100,7 +100,7 @@ plt.ylabel('Log relative error');
 
 # ### Error in canonical ensemble variables
 
-βs = [np.exp(k) for k in np.linspace(-7, 4, 500)]
+βs = np.exp(np.linspace(-7, 4, 500))
 exact_ens = canonical.Ensemble(Es, xlng, 'Exact')
 mean_ens = canonical.Ensemble(Es, mean_lng, 'Mean WL')
 mσ_ens = canonical.Ensemble(Es, mean_lng, 'Mean - σ WL')
