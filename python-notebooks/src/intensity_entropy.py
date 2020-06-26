@@ -7,7 +7,7 @@
 # $$
 # H = \sum_{x \in \mathcal{X}} -P(x) \ln P(x).
 # $$
-# The *intensity-level entropy* is the Shannon entropy of the empirical distribution of intensity values.
+# The *intensity-level entropy* is the Shannon entropy of the empirical distribution of intensity values. Since we are usually dealing with 8-bit image data, we will usually measure the intensity entropy in *bits*.
 
 import numpy as np
 
