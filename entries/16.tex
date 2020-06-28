@@ -1,0 +1,39 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\begin{document}
+\nbentry{June 26, 2020}{%
+  Progress summary
+}\label{sec:sum4}
+
+This week, I improved my implementation of the Wang-Landau algorithm and
+verified its correctness. I completed the convenience functions from before,
+which allowed me to manage and combine thousands of simulations to characterize
+the error in the density of states. For the same simulation parameters, my
+relative error on the order of $10^{-4}$ in the density of states for image
+systems is comparable to that of Landau ($10^{-3.5}$) for an Ising
+ferromagnet.\footnote{\textsc{doi}:
+\href{https://doi.org/10.1119/1.1707017}{10.1119/1.1707017}}
+The level of the microcanonical entropy is now adjusted so that the sum over the
+density of states is the total number of states. This prioritizes moderate
+temperature correctness, but we may also set the level according to a ground
+state, which increases correctness at low temperatures. I also calculated the
+corresponding errors in thermodynamic quantities like heat capacity, which gave
+consistent results.
+
+Another batch of simulations was performed for random grayscale images. The
+resulting densities of states were spread out over energies past half the
+maximum energy for a black image, as expected. The energy, heat capacity, and
+entropy all varied little across random images for temperatures which induce
+energy fluctuations at the scale of one gray level, but showed significant
+variance at intermediate temperatures. This reflects how the energy landscape
+near the ground image is the same for all gray images, but varies as the
+temperature becomes high enough to reach the bounds of allowed gray values.
+
+Now that the Wang-Landau algorithm has proven itself to be a useful tool for
+density estimation, we aim to use it and other methods to quantify the relative
+information content of different aspects of vision for the second half of the
+project.
+
+\end{document}
+
+
