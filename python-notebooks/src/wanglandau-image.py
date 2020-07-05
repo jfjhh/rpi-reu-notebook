@@ -62,15 +62,22 @@ wlresults = wl.run(params, log=True)
 [r['converged'] for r in wlresults['results']]
 
 
-wlEs, S, ΔS = wl.join_results(wlresults['results'])
-
-
 # ### Results
 
 import matplotlib.pyplot as plt
+plt.rcParams['font.size'] = 12
 
 
-for i, r in enumerate(wlresults['results']):
+import h5py, hickle
+with h5py.File('data/simulation-gozi5xqv.h5', 'r') as f:
+    wlresults = hickle.load(f)
+system_params = wlresults['parameters']['system']
+
+
+wlEs, S, ΔS = wl.join_results([wlresults['results']])
+
+
+for i, r in enumerate([wlresults['results']]):
     plt.plot(r['Es'][:-1], r['S'] + ΔS[i])
 
 
@@ -127,12 +134,12 @@ Es, gs = bw_Es, bw_gs
 # Presumably all of the densities of states for different images fall in the region between the all-gray and all-black/white curves.
 
 plt.plot(bw_Es / len(bw_Es), np.log(bw_gs), 'black', label='BW')
-plt.plot(gray_Es / len(gray_Es), np.log(gray_gs), 'gray', label='Gray')
-plt.plot(wlEs / len(wlEs), S - min(S), label='WL')
+plt.plot(wlEs / len(wlEs), S - min(S), '#ff6716', label='WL')
 plt.xlabel('E / MN')
 plt.ylabel('ln g')
 plt.title('N = {}, M = {}'.format(N, M))
-plt.legend();
+plt.legend()
+plt.savefig('wanglandau-bw.png', dpi=600)
 
 
 # plt.plot(wlEs / len(wlEs), np.abs(wlgs - bw_gs) / bw_gs)

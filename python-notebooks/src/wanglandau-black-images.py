@@ -8,6 +8,7 @@ from scipy import interpolate, special
 import os, h5py, hickle
 import matplotlib.pyplot as plt
 import pprint
+plt.rcParams['font.size'] = 12
 
 
 import sys
@@ -64,20 +65,22 @@ for lng in map(file_lngs, paths):
 std_lng = np.sqrt(std_lng / (len(paths) - 1))
 
 
-plt.plot(xEs, np.log(xgs), label='Exact')
-plt.plot(Es, mean_lng, label='Mean')
-plt.xlabel('Energy')
+plt.plot(xEs / (M*N), np.log(xgs), label='Exact')
+plt.plot(Es / (M*N), mean_lng, label='Mean')
+plt.xlabel('E / MN')
 plt.ylabel('Density of states g(E)')
 plt.legend();
 
 
 for lng in map(file_lngs, paths):
-    plt.plot(Es, lng - xlng, 'black', alpha=0.05, linewidth=1)
-plt.plot(Es, mean_lng - xlng, 'orange', linewidth=1)
-plt.plot(Es, (mean_lng - std_lng) - xlng, 'orange', linestyle='dashed', linewidth=1)
-plt.plot(Es, (mean_lng + std_lng) - xlng, 'orange', linestyle='dashed', linewidth=1)
-plt.xlabel('Energy')
-plt.ylabel('Deviation from exact g(E)');
+    plt.plot(Es / (M*N), lng - xlng, 'black', alpha=0.05, linewidth=1)
+plt.plot(Es / (M*N), mean_lng - xlng, '#ff6716', linewidth=1)
+plt.plot(Es / (M*N), (mean_lng - std_lng) - xlng, '#ff6716', linestyle='dashed', linewidth=1)
+plt.plot(Es / (M*N), (mean_lng + std_lng) - xlng, '#ff6716', linestyle='dashed', linewidth=1)
+plt.title('N = {}, M = {}'.format(N, M))
+plt.xlabel('E / MN')
+plt.ylabel('Deviation from exact g(E)')
+plt.savefig('wanglandau-bw-deviation.png', dpi=600);
 
 
 def relative_error(sim, exact):
@@ -85,17 +88,22 @@ def relative_error(sim, exact):
         return np.inf
     else:
         return np.abs(sim - exact) / exact
+def relerror(sim, exact = xlng):
+    return np.vectorize(relative_error)(sim, exact)
 def log_relerror(sim, exact = xlng):
-    return np.log10(np.vectorize(relative_error)(sim, exact))
+    return np.log10(relerror(sim, exact))
 
 
 for lng in map(file_lngs, paths):
-    plt.plot(Es, log_relerror(lng), 'black', alpha=0.02, linewidth=1)
-plt.plot(Es, log_relerror(mean_lng), 'orange', linewidth=1)
-plt.plot(Es, log_relerror(mean_lng - std_lng), 'orange', linestyle='dashed', linewidth=1)
-plt.plot(Es, log_relerror(mean_lng + std_lng), 'orange', linestyle='dashed', linewidth=1)
-plt.xlabel('Energy')
-plt.ylabel('Log relative error');
+    plt.plot(Es / (M*N), relerror(lng), 'black', alpha=0.02, linewidth=1)
+plt.plot(Es / (M*N), relerror(mean_lng), '#ff6716', linewidth=1)
+plt.plot(Es / (M*N), relerror(mean_lng - std_lng), '#ff6716', linestyle='dashed', linewidth=1)
+plt.plot(Es / (M*N), relerror(mean_lng + std_lng), '#ff6716', linestyle='dashed', linewidth=1)
+plt.title('N = {}, M = {}'.format(N, M))
+plt.xlabel('E / MN')
+plt.ylabel('Relative error')
+plt.yscale('log')
+plt.savefig('wanglandau-bw-relerror.png', dpi=600);
 
 
 # ### Error in canonical ensemble variables
@@ -110,52 +118,57 @@ pσ_ens = canonical.Ensemble(Es, mean_lng, 'Mean + σ WL')
 # The canonical distribution for fixed $\beta$.
 
 βc = 8e-2
-plt.plot(Es, exact_ens.p(βc), 'black', label=exact_ens.name, linestyle='dashed')
-plt.plot(Es, mean_ens.p(βc), 'orange', label=mean_ens.name)
+plt.plot(Es / (M*N), exact_ens.p(βc), 'black', label=exact_ens.name, linestyle='dashed')
+plt.plot(Es / (M*N), mean_ens.p(βc), '#ff6716', label=mean_ens.name)
 plt.title('β = {}, N = {}, M = {}'.format(βc, N, M))
-plt.xlabel("Energy")
+plt.xlabel("E / MN")
 plt.ylabel("Canonical p(E)")
 plt.legend();
 
 
 for lng in map(file_lngs, paths):
     ens = canonical.Ensemble(Es, lng)
-    plt.plot(Es, log_relerror(ens.p(βc), exact_ens.p(βc)),
+    plt.plot(Es / (M*N), relerror(ens.p(βc), exact_ens.p(βc)),
              'black', alpha=0.02, linewidth=1)
-plt.plot(Es, log_relerror(mean_ens.p(βc), exact_ens.p(βc)),
-             'orange', linewidth=1, label=mean_ens.name)
-plt.plot(Es, log_relerror(mσ_ens.p(βc), exact_ens.p(βc)),
-             'orange', linewidth=1, linestyle='dashed', label=mσ_ens.name)
-plt.plot(Es, log_relerror(pσ_ens.p(βc), exact_ens.p(βc)),
-             'orange', linewidth=1, linestyle='dashed', label=pσ_ens.name)
+plt.plot(Es / (M*N), relerror(mean_ens.p(βc), exact_ens.p(βc)),
+             '#ff6716', linewidth=1, label=mean_ens.name)
+plt.plot(Es / (M*N), relerror(mσ_ens.p(βc), exact_ens.p(βc)),
+             '#ff6716', linewidth=1, linestyle='dashed', label=mσ_ens.name)
+plt.plot(Es / (M*N), relerror(pσ_ens.p(βc), exact_ens.p(βc)),
+             '#ff6716', linewidth=1, linestyle='dashed', label=pσ_ens.name)
 plt.title('β = {}, N = {}, M = {}'.format(βc, N, M))
-plt.xlabel("Energy")
-plt.ylabel("Log relative error in canonical p(E)")
+plt.xlabel("E / MN")
+plt.ylabel("Relative error in canonical p(E)")
+plt.yscale('log')
 plt.legend();
 
 
 # The relative error in the heat capacity provides a stringent test of the results.
 
-plt.plot(-np.log(βs), exact_ens.heat_capacity(βs), 'black', label=exact_ens.name, linestyle='dashed')
-plt.plot(-np.log(βs), mean_ens.heat_capacity(βs), 'orange', label=mean_ens.name)
-plt.xlabel("ln kT")
-plt.ylabel("Heat capacity")
+plt.plot(1 / βs, exact_ens.heat_capacity(βs) / N, 'black', label=exact_ens.name, linestyle='dashed')
+plt.plot(1 / βs, mean_ens.heat_capacity(βs) / N, '#ff6716', label=mean_ens.name)
+plt.xlabel("kT")
+plt.xscale('log')
+plt.ylabel("Heat capacity per site")
 plt.title('N = {}, M = {}'.format(N, M))
-plt.legend();
+plt.legend()
+plt.savefig('wanglandau-bw-C.png', dpi=600)
 
 
 for lng in map(file_lngs, paths):
     ens = canonical.Ensemble(Es, lng)
-    plt.plot(-np.log(βs), log_relerror(ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
+    plt.plot(1 / βs, relerror(ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
              'black', alpha=0.02, linewidth=1)
-plt.plot(-np.log(βs), log_relerror(mean_ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
-             'orange', label=mean_ens.name)
-plt.plot(-np.log(βs), log_relerror(mσ_ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
-             'orange', linestyle='dashed', label=mσ_ens.name)
-plt.plot(-np.log(βs), log_relerror(pσ_ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
-             'orange', linestyle='dashed', label=pσ_ens.name)
-plt.xlabel("ln kT")
-plt.ylabel("Log relative error in heat capacity")
+plt.plot(1 / βs, relerror(mean_ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
+             '#ff6716', label=mean_ens.name)
+plt.plot(1 / βs, relerror(mσ_ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
+             '#ff6716', linestyle='dashed', label=mσ_ens.name)
+plt.plot(1 / βs, relerror(pσ_ens.heat_capacity(βs), exact_ens.heat_capacity(βs)),
+             '#ff6716', linestyle='dashed', label=pσ_ens.name)
+plt.xlabel('kT')
+plt.xscale('log')
+plt.ylabel('Relative error in heat capacity')
+plt.yscale('log')
 plt.title('N = {}, M = {}'.format(N, M))
-plt.legend();
+plt.savefig('wanglandau-bw-C-relerror.png', dpi=600)
 

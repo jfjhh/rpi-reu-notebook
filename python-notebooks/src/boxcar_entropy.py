@@ -10,7 +10,7 @@ from PIL import Image, ImageFilter, ImageOps
 from src.utilities import *
 from src.intensity_entropy import *
 from src.kernels import *
-plt.rcParams['image.cmap'] = 'inferno'
+plt.rcParams['image.cmap'] = 'gray'
 
 
 # Let's compare the boxcar images for intensity entropy to those for a positive function on an image (the standard deviation) and for different functions of the induced intensity distribution.
@@ -21,9 +21,16 @@ data = np.array(img)
 plt.imshow(img);
 
 
+plt.imshow(img)
+plt.axis('off')
+plt.savefig('house_cmap.png', dpi=600, pad_inches=0, bbox_inches='tight')
+
+
 # ## Standard deviation
 
-plt.imshow(mapbox(2, np.std, np.array(img)));
+plt.imshow(mapbox(2, np.std, np.array(img)))
+plt.axis('off')
+plt.savefig('house_std.png', dpi=600, pad_inches=0, bbox_inches='tight')
 
 
 boxσs = list(mapboxes([1,2,3,10,20,50], np.std, np.array(img)))
@@ -39,7 +46,14 @@ plt.show()
 
 # ## Intensity entropy
 
-plt.imshow(mapbox(2, intensity_entropy, np.array(img)));
+plt.imshow(mapbox(2, intensity_entropy, np.array(img)))
+plt.axis('off')
+plt.savefig('house_entropy_2.png', dpi=600, pad_inches=0, bbox_inches='tight')
+
+
+plt.imshow(mapbox(20, intensity_entropy, np.array(img)))
+plt.axis('off')
+plt.savefig('house_entropy_20.png', dpi=600, pad_inches=0, bbox_inches='tight')
 
 
 boxSes = list(mapboxes([1,2,3,10,20,50], intensity_entropy, np.array(img)))
