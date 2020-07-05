@@ -1,0 +1,128 @@
+\documentclass[aps,reprint,floatfix]{revtex4-2}
+
+\usepackage{microtype}
+\usepackage{fix-cm} % Remove font size substitution warnings
+\usepackage{amsmath} % must be loaded before newtxmath
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{siunitx}
+\usepackage{physics}
+\usepackage[mathic=true]{mathtools}
+\usepackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{tikz}
+
+\usepackage[semibold]{libertine} % a bit lighter than Times--no osf in math
+\usepackage[libertine,vvarbb]{newtxmath}
+\usepackage[scr=boondoxo,cal=esstix]{mathalfa}
+\usepackage{bm} % load after all math to give access to bold math
+\renewcommand\mathrm\textnormal%
+
+% \allowdisplaybreaks%
+
+\usepackage[pdfusetitle]{hyperref}
+\hypersetup{%
+  colorlinks,
+  allcolors=MidnightBlue,
+  citecolor=OliveGreen,
+  urlcolor=Mahogany,
+}
+\urlstyle{same}
+
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}{Lemma}
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}
+\newtheorem{post}{Postulate}
+
+\graphicspath{{figs/}}
+
+% \usepackage{minted}
+% \setmonofont[Scale=MatchLowercase]{Iosevka Semibold}
+% \setminted[wolfram]{%
+%   mathescape, style=mathematica, breaklines,
+% }
+% \setminted[julia]{%
+%   mathescape, style=friendly, baselinestretch=0.9, breaklines
+% }
+
+\renewcommand\leq\leqslant%
+\renewcommand\geq\geqslant%
+
+\renewcommand\phi\varphi%
+
+\newcommand\im{\mathrm{i}\mkern1mu}
+\renewcommand\ln{\operatorname{\mathrm{ln}}}
+\renewcommand\log{\operatorname{\mathrm{log}}}
+\renewcommand\exp{\operatorname{\mathrm{exp}}}
+\renewcommand\tr{\operatorname{\mathrm{tr}}}
+\renewcommand\det{\operatorname{\mathrm{det}}}
+
+\newcommand\ZZ{\mathbb{Z}}
+\newcommand\QQ{\mathbb{Q}}
+\newcommand\CC{\mathbb{C}}
+\newcommand\RR{\mathbb{R}}
+
+\newcommand{\opr}[1]{\mathsf{#1}}%
+\newcommand\idsopr{\mathbb{1}}
+\newcommand\idopr{\opr{I}}
+\newcommand\sopr\mathcal%
+\newcommand\cat\mathsf%
+\newcommand\herm{\operatorname{\mathrm{He}}}
+
+% \newcommand\lprod[2]{{\qty(#1,#2)}}
+\newcommand\lprod\ip%
+
+\newcommand\hilb{\mathcal{H}}
+\newcommand\liou{\mathcal{L}}
+\newcommand\ham{\opr{H}}
+\newcommand\dop{\opr{ρ}}
+\newcommand\tprod\otimes%
+
+\newcommand\ensavg[2][\dop]{\ev{#2}_{\mkern-1.5mu{#1}}}%
+\newcommand\sensavg[2][\dop]{\ev*{#2}_{\mkern-1.5mu{#1}}}%
+
+\begin{document}
+\title{Rensselaer \textsc{nsf} \textsc{reu} midterm report:\\
+Towards the entropy of images}
+\author{Alex Striff}
+\affiliation{Department of Physics, Reed College, Portland \textsc{or} 97202, \textsc{usa}}
+\author{Vincent Meunier}
+\affiliation{Department of Physics, Applied Physics, and Astronomy, Rensselaer
+Polytechnic Institute, Troy \textsc{ny} 12180, \textsc{usa}}
+\date{July 10, 2020}
+\begin{abstract}
+  TODO
+\end{abstract}
+\maketitle
+
+\section{Introduction}
+
+TODO.
+
+\section{Theory}
+
+TODO.
+
+\section{Methods}
+
+TODO.
+
+\section{Results}
+
+TODO.
+
+\section{Discussion}
+
+TODO.
+
+\section{Conclusion}
+
+TODO.
+
+\nocite{*}
+\bibliography{references}
+
+\end{document}
+
