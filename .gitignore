@@ -13,5 +13,4 @@
 *.synctex*
 _minted*
 *.ipynb_checkpoints
-entries/*.pdf
 
