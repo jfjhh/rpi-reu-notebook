@@ -1,5 +1,7 @@
 \documentclass[14pt,c]{beamer}
 
+\usepackage{ulem}
+
 \usecolortheme{owl}
 \setbeamercolor{frametitle}{bg=black}
 \setbeamertemplate{frametitle}[default][center]
@@ -193,50 +195,45 @@
 \begin{frame}{Wang-Landau algorithm results}
   \centering
   \includegraphics[width=0.9\framewidth]{wanglandau-bw}
+  \\
+  \small
+  \textcolor{white}{BW:\@ Black/white (exact)} \;
+  \textcolor{blue}{WL:\@ Wang-Landau result}
 \end{frame}
-
-% \begin{frame}{Wang-Landau results}
-%   \centering
-%   \includegraphics[width=0.9\framewidth]{wanglandau-bw-deviation}
-% \end{frame}
 
 \begin{frame}{Wang-Landau algorithm results}
   \centering
   \includegraphics[width=0.9\framewidth]{wanglandau-bw-relerror}
+  \\
+  \small
+  \textcolor{white}{Black image simulations} \;
+  \textcolor{blue}{\uline{Mean} $\pm$ \dashuline{standard deviation}}
 \end{frame}
-
-% \begin{frame}{Wang-Landau results}
-%   \centering
-%   \includegraphics[width=0.9\framewidth]{wanglandau-bw-C}
-% \end{frame}
-
-% \begin{frame}{Wang-Landau results}
-%   \centering
-%   \includegraphics[width=0.9\framewidth]{wanglandau-bw-C-relerror}
-% \end{frame}
 
 \begin{frame}{Wang-Landau algorithm results}
   \centering
   \includegraphics[width=0.9\framewidth]{wanglandau-gray}
+  \\
+  \small
+  \textcolor{white}{Random gray image simulations} \;
+  \textcolor{blue}{BW:\@ Black/white (exact)}
 \end{frame}
 
 \begin{frame}{Wang-Landau algorithm results}
   \centering
   \includegraphics[width=0.9\framewidth]{wanglandau-gray-S}
+  \\
+  \small
+  \textcolor{white}{Random gray image simulations} \;
+  \textcolor{blue}{BW:\@ Black/white (exact)}
 \end{frame}
 
 \section{Other approaches taken}
 
 \begin{frame}{Other approaches taken}
   \begin{itemize}
-    \item The plenoptic function (light field)
-      \begin{itemize}
-        \item Scale space theory and thermal diffusion
-        \item Psycophysics: receptive fields
-      \end{itemize}
-    \item Minkowski–Bouligand and information dimensions
-    \item Other Bayesian methods
-    \item Information content of coordinate systems by KL divergences
+    \item All light entering the eye (receptive fields)
+    \item Entropy for continuous coordinates (KL divergences)
   \end{itemize}
 \end{frame}
 
@@ -244,18 +241,9 @@
 
 \begin{frame}{Next steps}
   \begin{itemize}
-    \item Natural images
-      \begin{itemize}
-        \item Local discrete spatial information
-        \item Perceptually uniform color spaces
-      \end{itemize}
-    \item Information content of functions on images
-      \begin{itemize}
-        \item High-level features like faces
-        \item Novel inference
-      \end{itemize}
-    \item Restricted Boltzmann machines and autoencoders
-    \item Kolmogorov complexity and sufficient statistics
+    \item Include spatial information (infer from neighbors)
+    \item Include color (CIE Lab)
+    \item Information as how to draw the image (Kolmogorov complexity)
   \end{itemize}
 \end{frame}
 
