@@ -14,7 +14,7 @@
 
 \usepackage[semibold]{libertine} % a bit lighter than Times--no osf in math
 \usepackage[libertine,vvarbb]{newtxmath}
-\usepackage[scr=boondoxo,cal=esstix]{mathalfa}
+\usepackage[scr=esstix,cal=boondoxo]{mathalfa}
 \usepackage{bm} % load after all math to give access to bold math
 \renewcommand\mathrm\textnormal%
 
@@ -22,12 +22,14 @@
 
 \usepackage[pdfusetitle]{hyperref}
 \hypersetup{%
+  hypertexnames=false, % For compatibility with autonum
   colorlinks,
   allcolors=MidnightBlue,
   citecolor=OliveGreen,
   urlcolor=Mahogany,
 }
 \urlstyle{same}
+\usepackage{autonum}
 
 \theoremstyle{plain}
 \newtheorem{thm}{Theorem}[section]
@@ -52,8 +54,10 @@
 
 \renewcommand\phi\varphi%
 
+
 \newcommand\im{\mathrm{i}\mkern1mu}
 \renewcommand\ln{\operatorname{\mathrm{ln}}}
+\renewcommand\lg{\operatorname{\mathrm{lg}}}
 \renewcommand\log{\operatorname{\mathrm{log}}}
 \renewcommand\exp{\operatorname{\mathrm{exp}}}
 \renewcommand\tr{\operatorname{\mathrm{tr}}}
@@ -85,7 +89,7 @@
 
 \begin{document}
 \title{Rensselaer \textsc{nsf} \textsc{reu} midterm report:\\
-Towards the entropy of images}
+Quantifying visual information}
 \author{Alex Striff}
 \affiliation{Department of Physics, Reed College, Portland \textsc{or} 97202, \textsc{usa}}
 \author{Vincent Meunier}
@@ -93,33 +97,289 @@ Towards the entropy of images}
 Polytechnic Institute, Troy \textsc{ny} 12180, \textsc{usa}}
 \date{July 10, 2020}
 \begin{abstract}
-  TODO
+  We attribute a notion of lost information (entropy) to digital images based on
+  considering pixel value fluctuations that are considered imperceptible or
+  irrelevant to understanding the content of an image. This information is
+  precisely defined in the framework of information theory, and is influenced by
+  an analogous situation in statistical physics. Using this analogy enables us
+  to compute the entropy using the Wang-Landau algorithm for the density of
+  states developed for use in statistical physics. Given the results, we discuss
+  potential extensions of the model that better resemble the known physical and
+  biological processes that take place in the visual system.
 \end{abstract}
 \maketitle
 
 \section{Introduction}
 
-TODO.
+The human visual system is crucial for survival. While this system gathers
+useful information from our environment, it remains imperfect. A precise
+understanding of the information lost in sensation may guide future
+understanding of the information we do gather, as well as inform the design of
+image compression and reconstruction algorithms for human consumption.
+
+As a simple model for this lossy process, we consider slightly varying the pixel
+values of a grayscale image to produce different images that are not percieved
+to be different, or that are not different enough to change the qualitative
+impression of the image on an observer. The freedom to choose different modified
+images represents information that is lost. What follows is a description of how
+we can quantify this information, and then how we can calculate it for
+particular images.
 
 \section{Theory}
 
-TODO.
+\subsection{Information Theory}\label{sec:information-theory}
+
+A mathematical notion of information is provided by the work of
+Shannon~\cite{shannon1948mathematical}. In the view of classical information
+theory, \emph{information} is a property of an event, in the sense of a random
+process. To this end, we consider a random variable $X$ with support
+$\mathcal{X}$ and probabilities $p(x)$ for $x \in \mathcal{X}$. As regards
+communication, the information $I(x)$ required to describe the event $X = x$
+should satisfy intuitive axioms:
+\begin{itemize}
+  \item If $p(x) = 1$, the event is certain to happen and no information is
+    required to describe its occurence: $I(x) = 0$.
+  \item If $p(x) < p(x')$, then $x$ is less likely to happen, and ought to
+    require more information to describe: $I(x) > I(x') \geq 0$. As an analogy,
+    compare the phrases ``nightly'' and ``once in a full moon:'' The less
+    probable event has a longer description.
+  \item For independent events $x$ and $y$, it makes no difference to describe
+    the combined event $(x,\, y)$ instead of each event individually: $I(x,\, y)
+    = I(x) + I(y)$.
+\end{itemize}
+
+Given these axioms, the only solution is the
+\emph{self-information}~(Theorem~\ref{thm:self-information})
+\begin{equation}
+  I(x)
+  = -\log p(x),
+  \label{eq:self-information}
+\end{equation}
+where the base of the logarithm determines the units of information: base two
+($\lg$) gives \emph{bits} and base $e$ ($\ln$) gives \emph{nats}. The
+information of the entire random variable may then be defined as the average
+of~\eqref{eq:self-information} over all events, which is known as the
+\emph{Shannon entropy}
+\begin{equation}
+  H
+  = -\sum_{x \in \mathcal{X}} p(x) \log p(x).
+  \label{eq:shannon-entropy}
+\end{equation}
+The Shannon entropy may also be derived from intuitive axioms similar to those
+for the self information~\cite{shannon1948mathematical,jaynes1957information}.
+
+\subsection{The maximum entropy principle (\textsc{MaxEnt})}\label{sec:maxent}
+
+A physicist familiar with statistical mechanics might wonder why Shannon's
+entropy~\eqref{eq:shannon-entropy} has the same mathematical form as the
+thermodynamic state variable for temperature
+\begin{equation}
+  S
+  = -k_B \sum_{x \in \mathcal{X}} p(x) \ln p(x),
+  \label{eq:gibbs-entropy}
+\end{equation}
+which we may call the \emph{Gibbs entropy}. This connection between information
+theory and statistical physics was developed by Jaynes, culminating in the
+maximum entropy principle (\textsc{MaxEnt})~\cite{jaynes1957information}. We
+would like to make predictions about systems given some macroscopic quantities
+that we observe. To do so, we must assign probabilities to microstates, which we
+ought to do in an unbiased way, subject to the constraints that average
+macroscopic quantities take their observed values. Jaynes argues that this
+unbiased assignment corresponds to maximizing the entropy, and describes how
+this subjective assignment can be expected to make physical predictions, while
+an objective assignment of probabilities is required to understand the
+microscopic mechanisms behind these predictions. In particular, maximizing the
+entropy with constrained average energy produces the canonical
+distribution~\cite{jaynes1957information}
+\[
+  p(x)
+  = \frac{1}{Z}e^{-\beta E(x)},
+\]
+where $\beta = \flatfrac{1}{k_B T}$ and the \emph{partition function} is
+\[
+  Z
+  = \sum_{x \in \mathcal{X}} e^{-\beta E(x)},
+\]
+with the variates $x$ being different states of a system.
+
+\subsection{Image fluctuations}
+
+Given a base image $x$ with $N$ pixels which take integer gray values $1 \leq
+x_i \leq M$, we define the \emph{energy} of a different image $y$ with gray
+values $1 \leq y_i \leq M$ as
+\[
+  E_x(y)
+  = \sum_{i=1}^N \abs{x_i - y_i},
+\]
+as depicted in Fig.~\ref{fig:image-levels}.
+\begin{figure}
+  \centering
+  \tikzstyle{emph} = [fill=MidnightBlue]
+  \begin{tikzpicture}[scale=0.5]%, every node/.style={transform shape}]
+    \node[left] at (1.25*1, 1 + 0.5) {\small$1$};
+    \node[left] at (1.25*1, 5 + 0.5) {\small$M$};
+    \node[below] at (1.25*1 + 0.5,1) {\small$1$};
+    \node[below] at (1.25*4 + 0.5,1) {\small$N$};
+    \fill[gray] (1.25*1,4) rectangle ++(1,1);
+    \fill[emph] (1.25*1,3) rectangle ++(1,1);
+    \fill[gray] (1.25*2,1) rectangle ++(1,1);
+    \fill[emph] (1.25*2,5) rectangle ++(1,1);
+    \fill[gray] (1.25*4,2) rectangle ++(1,1);
+    \fill[emph] (1.25*4,4) rectangle ++(1,1);
+    \draw[emph] (1.25*4 + 1, 2 + 0.5) -- ++(0.75,0);
+    \draw[emph] (1.25*4 + 1, 4 + 0.5) -- ++(0.75,0);
+    \draw[emph,<->,thick] (1.25*4 + 1.5, 2 + 0.5) -- ++(0,2)
+      node[midway,right]{$\Delta E_N = 2$};
+    \node (ellipses) at (1.25*3 + 0.5, 3 + 0.5) {$\cdots$};
+    \foreach \x in {1,2,4} {%
+      \foreach \y in {1,...,5} {%
+        \draw (1.25*\x,\y) rectangle ++(1,1);
+      }
+    }
+  \end{tikzpicture}
+  \caption{The difference between base image values
+    % (%
+    % \begin{tikzpicture}
+    %   \draw[black,fill=gray] (0,0) rectangle (1ex,1ex);
+    % \end{tikzpicture})
+    and modified image values
+    % (%
+    % \begin{tikzpicture}
+    %   \draw[black,emph] (0,0) rectangle (1ex,1ex);
+    % \end{tikzpicture}).
+  }\label{fig:image-levels}
+\end{figure}
+
+We would like to consider all possible modified images, but focus on images with
+a typical value for the energy which indicates the size of fluctuations we are
+considering. We do this by assigning a probability distribution to the images
+with constrained average energy. Given the results of Sec.~\ref{sec:maxent}, we
+choose the \textsc{MaxEnt} distribution, which we may consider as a canonical
+ensemble. By thinking of our images as a physical system, we may apply tools
+from statistical mechanics. We would like to know the entropy of the
+\textsc{MaxEnt} distribution, which we will compute with the partition function as
+\begin{equation}
+  S
+  = \frac{E - F}{T},
+  \label{eq:canonical-entropy}
+\end{equation}
+where $E$ is the average energy we set, $T$ is the temperature, and
+\begin{equation}
+  F
+  = -k_B T \ln Z
+  \label{eq:helmholtz}
+\end{equation}
+is the Helmholtz free energy. In turn, we obtain the partition function
+\begin{equation}
+  Z
+  = \sum_{E \in E(\mathcal{X})} g(E) e^{-\beta E}
+  \label{eq:partition-function}
+\end{equation}
+from the number of states $g(E)$ with energy $E$ (the \emph{density of states}).
+For the case where the base image is all black ($x_i = 0$) or all white ($x_i =
+M$), we may explicitly count that the density of states
+is~(Theorem~\ref{thm:bw-g})
+\begin{equation}
+  g(E)
+  = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk}.
+  \label{eq:bw-g}
+\end{equation}
+However, the situation for general grayscale images becomes more complicated.
+For this reason and the ability to analyze more complex systems, we determine
+the density of states numerically using the Wang-Landau
+algorithm~\cite{wanglandau}.
 
 \section{Methods}
 
-TODO.
+The Wang-Landau algorithm was implemented to determine the density of states for
+grayscale image fluctuations.
 
-\section{Results}
+% \section{Results}
 
-TODO.
+% TODO.
 
-\section{Discussion}
+% \section{Discussion}
 
-TODO.
+% TODO.
 
-\section{Conclusion}
+% \section{Conclusion}
 
-TODO.
+% TODO.
+
+\appendix
+
+\section{Theorems}
+
+\begin{thm}\label{thm:self-information}
+  The only twice continuously differentiable function $I(x)$ that satisfies the
+  axioms in Sec.~\ref{sec:information-theory} is the self-information $I(x) =
+  -\log p(x)$.
+  \begin{proof}
+    Consider independent events $x$ and $y$ with probabilities $p$ and $p'$. The
+    axioms only concern the probabilities of the events, so we may express the
+    information as $I(x) = \tilde{I}(p(x))$. Then as proposed,
+    \[
+      I(x,\, y)
+      = \tilde{I}(pp')
+      = \tilde{I}(p) + \tilde{I}(p')
+    \]
+    by independence. Taking the partial derivative with respect to $p$ gives
+    \[
+      p' \tilde{I}'(pp')
+      = \tilde{I}'(p),
+    \]
+    and then taking the partial derivative with respect to $p'$ gives
+    \[
+      \tilde{I}'(pp') + pp' \tilde{I}''(pp')
+      = 0.
+    \]
+    We may then define $q = pp'$ to obtain the differential equation
+    \[
+      \dv{q}\qty(q \tilde{I}'(q))
+      = 0,
+    \]
+    which has solution
+    \[
+      I(q) = k\log q
+    \]
+    for real $k$. The condition that $I(q) \ge 0$ requires $k > 0$, which is
+    equivalent to a choice of base for the logarithm.
+  \end{proof}
+\end{thm}
+
+\begin{thm}\label{thm:bw-g}
+  The number of tuples $(x_1,\, \ldots,\, x_N)$ with $0 \leq x_i \leq M - 1$ and
+  $\sum_i x_i = E$ is
+  \[
+    g(E)
+    = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk}.
+  \]
+  \begin{proof}
+    We represent the sum $E$ as the exponent of a integer polynomial in $z$ in
+    the following way. For the tuple $(x_1,\, x_2)$, we represent $x_1$ as
+    $z^{x_1}$ and $x_2$ as $z^{x_2}$. Together, we have $z^{x_1} z^{x_2}$,
+    which gives the monomial $z^{x_1 + x_2} = z^E$ for this tuple. We may then
+    find $g(E)$ as the coefficient of $z^E$ in
+    \[
+      {\qty(1 + \cdots + z^{M-1})}^N.
+    \]
+    Expanding using the binomial theorem gives
+    \begin{align}
+      {\qty(\frac{1 - z^M}{1 - z})}^N
+      &= \sum_{k=0}^N {(-1)}^k \binom{N}{k} z^{Mk}
+      \sum_{j=0}^\infty {(-1)}^j \binom{-N}{j} z^j \\
+      &= \sum_{k=0}^N \sum_{j=0}^\infty {(-1)}^k \binom{N}{k}
+      \binom{N + j - 1}{j} z^{Mk + j}.
+    \end{align}
+    The value of $j$ for $z$ to have exponent $E$ is $j = E - Mk$, so the
+    coefficient of $z^E$ in the polynomial is
+    \begin{equation}
+      g(E)
+      = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk},
+    \end{equation}
+    where the limits of summation are set by the binomial coefficients.
+  \end{proof}
+\end{thm}
 
 \nocite{*}
 \bibliography{references}
