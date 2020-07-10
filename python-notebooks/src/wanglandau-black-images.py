@@ -99,9 +99,9 @@ for lng in map(file_lngs, paths):
 plt.plot(Es / (M*N), relerror(mean_lng), '#ff6716', linewidth=1)
 plt.plot(Es / (M*N), relerror(mean_lng - std_lng), '#ff6716', linestyle='dashed', linewidth=1)
 plt.plot(Es / (M*N), relerror(mean_lng + std_lng), '#ff6716', linestyle='dashed', linewidth=1)
-plt.title('N = {}, M = {}'.format(N, M))
+plt.title('Black images (N = {}, M = {})'.format(N, M))
 plt.xlabel('E / MN')
-plt.ylabel('Relative error')
+plt.ylabel('Relative error (ln g)')
 plt.yscale('log')
 plt.savefig('wanglandau-bw-relerror.png', dpi=600);
 
@@ -141,6 +141,24 @@ plt.xlabel("E / MN")
 plt.ylabel("Relative error in canonical p(E)")
 plt.yscale('log')
 plt.legend();
+
+
+# Entropy
+
+plt.plot(1 / βs, exact_ens.entropy(βs) / (N*np.log(2)), 'black', label=exact_ens.name, linestyle='dashed')
+plt.plot(1 / βs, mean_ens.entropy(βs) / (N*np.log(2)), '#ff6716', label=mean_ens.name)
+plt.xlabel("kT")
+plt.xscale('log')
+plt.ylabel("Entropy per site (bits)")
+plt.title('N = {}, M = {}'.format(N, M))
+plt.legend()
+plt.savefig('wanglandau-bw-S.png', dpi=600)
+
+
+exact_ens.entropy(0) / N
+
+
+exact_ens.entropy(0) / (N*np.log(2))
 
 
 # The relative error in the heat capacity provides a stringent test of the results.

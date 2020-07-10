@@ -8,6 +8,7 @@ from scipy import interpolate, special
 import os, h5py, hickle
 import matplotlib.pyplot as plt
 import pprint
+plt.rcParams['font.size'] = 12
 
 
 import sys
@@ -47,9 +48,14 @@ xlng = np.log(xgs)
 xens = canonical.Ensemble(xEs, xlng, 'Exact')
 
 
+plt.plot(xEs / (N*M), xlng, '#ff6716', label='BW')
 for Es, S in map(file_results, paths):
-    plt.plot(Es, S, 'black', alpha=0.02)
-plt.plot(xEs, xlng);
+    plt.plot(Es / (N*M), S, 'black', alpha=0.02)
+plt.title('Random images (N = {}, M = {})'.format(N, M))
+plt.xlabel("E / MN")
+plt.ylabel("ln g")
+plt.legend()
+plt.savefig('wanglandau-gray.png', dpi=600)
 
 
 βs = np.exp(np.linspace(-8, 4, 500))
@@ -81,20 +87,39 @@ plt.legend();
 
 # Entropy
 
+plt.plot(1 / βs, xens.entropy(βs) / (N*np.log(2)), '#ff6716', label='BW')
 for Es, S in map(file_results, paths):
     ens = canonical.Ensemble(Es, S)
-    plt.plot(-np.log(βs), ens.entropy(βs), 'black', alpha=0.01)
-plt.plot(-np.log(βs), xens.entropy(βs), 'orange', label='Exact black')
-plt.xlabel('ln kT')
-plt.ylabel('Canonical entropy')
+    plt.plot(1 / βs, ens.entropy(βs) / (N*np.log(2)), 'black', alpha=0.002)
+plt.title('Random images (N = {}, M = {})'.format(N, M))
+plt.xlabel('kT')
+plt.xscale('log')
+plt.ylabel('Canonical entropy per site (bits)')
+plt.legend()
+plt.savefig('wanglandau-gray-S.png', dpi=600)
+
+
+for Es, S in map(file_results, paths):
+    ens = canonical.Ensemble(Es, S)
+    plt.plot(1 / βs, (ens.entropy(βs) - xens.entropy(βs)) / (N*np.log(2)), 'black', alpha=0.002)
+plt.title('Random images (N = {}, M = {})'.format(N, M))
+plt.xlabel('kT')
+plt.xscale('log')
+plt.ylabel('Canonical entropy per site (bits)')
 plt.legend();
 
 
+# Entropy vs Average energy
+
+plt.plot(xens.energy(βs) / N, xens.entropy(βs) / (N*np.log(2)), '#ff6716', label='BW')
 for Es, S in map(file_results, paths):
     ens = canonical.Ensemble(Es, S)
-    plt.plot(-np.log(βs), ens.entropy(βs) - xens.entropy(βs), 'black', alpha=0.02)
-plt.xlabel('ln kT')
-plt.ylabel('Canonical entropy difference from black');
+    plt.plot(ens.energy(βs) / N, ens.entropy(βs) / (N*np.log(2)), 'black', alpha=0.002)
+plt.title('Random images (N = {}, M = {})'.format(N, M))
+plt.xlabel('E / N')
+plt.ylabel('Canonical entropy per site (bits)')
+plt.legend()
+plt.savefig('wanglandau-gray-ES.png', dpi=600)
 
 
 # Is the canonical entropy related to the intensity entropy?
