@@ -1,4 +1,4 @@
-\documentclass[aps,reprint,floatfix]{revtex4-2}
+\documentclass[aps,reprint]{revtex4-2}
 
 \usepackage{microtype}
 \usepackage{fix-cm} % Remove font size substitution warnings
@@ -26,7 +26,6 @@
   colorlinks,
   allcolors=MidnightBlue,
   citecolor=OliveGreen,
-  urlcolor=Mahogany,
 }
 \urlstyle{same}
 \usepackage{autonum}
@@ -40,14 +39,15 @@
 
 \graphicspath{{figs/}}
 
-% \usepackage{minted}
-% \setmonofont[Scale=MatchLowercase]{Iosevka Semibold}
-% \setminted[wolfram]{%
-%   mathescape, style=mathematica, breaklines,
-% }
-% \setminted[julia]{%
-%   mathescape, style=friendly, baselinestretch=0.9, breaklines
-% }
+\usepackage{minted}
+\setmonofont[Scale=MatchLowercase]{Iosevka}
+\setminted{%
+  fontsize=\scriptsize,
+  mathescape, style=friendly, baselinestretch=0.9, breaklines
+}
+\setminted[wolfram]{%
+  style=mathematica
+}
 
 \renewcommand\leq\leqslant%
 \renewcommand\geq\geqslant%
@@ -204,14 +204,6 @@ with the variates $x$ being different states of a system.
 
 \subsection{Image fluctuations}
 
-Given a base image $x$ with $N$ pixels which take integer gray values $1 \leq
-x_i \leq M$, we define the \emph{energy} of a different image $y$ with gray
-values $1 \leq y_i \leq M$ as
-\[
-  E_x(y)
-  = \sum_{i=1}^N \abs{x_i - y_i},
-\]
-as depicted in Fig.~\ref{fig:image-levels}.
 \begin{figure}
   \centering
   \tikzstyle{emph} = [fill=MidnightBlue]
@@ -237,18 +229,20 @@ as depicted in Fig.~\ref{fig:image-levels}.
       }
     }
   \end{tikzpicture}
-  \caption{The difference between base image values
-    % (%
-    % \begin{tikzpicture}
-    %   \draw[black,fill=gray] (0,0) rectangle (1ex,1ex);
-    % \end{tikzpicture})
-    and modified image values
-    % (%
-    % \begin{tikzpicture}
-    %   \draw[black,emph] (0,0) rectangle (1ex,1ex);
-    % \end{tikzpicture}).
+  \caption{The energy difference between base image pixel values
+    (\textcolor{gray}{$\blacksquare$}) and modified image pixel values
+    (\textcolor{MidnightBlue}{$\blacksquare$}).
   }\label{fig:image-levels}
 \end{figure}
+
+Given a base image $A$ with $N$ pixels which take integer gray values $1 \leq
+a_i \leq M$, we define the \emph{energy} of a different image $B$ with gray
+values $1 \leq b_i \leq M$ as
+\[
+  E_A(B)
+  = \sum_{i=1}^N \abs{a_i - b_i},
+\]
+as depicted in Fig.~\ref{fig:image-levels}.
 
 We would like to consider all possible modified images, but focus on images with
 a typical value for the energy which indicates the size of fluctuations we are
@@ -259,24 +253,18 @@ ensemble. By thinking of our images as a physical system, we may apply tools
 from statistical mechanics. We would like to know the entropy of the
 \textsc{MaxEnt} distribution, which we will compute with the partition function as
 \begin{equation}
-  S
-  = \frac{E - F}{T},
+  \flatfrac{S}{k_B}
+  = \beta E + \ln Z.
   \label{eq:canonical-entropy}
 \end{equation}
-where $E$ is the average energy we set, $T$ is the temperature, and
-\begin{equation}
-  F
-  = -k_B T \ln Z
-  \label{eq:helmholtz}
-\end{equation}
-is the Helmholtz free energy. In turn, we obtain the partition function
+In turn, we obtain the partition function
 \begin{equation}
   Z
   = \sum_{E \in E(\mathcal{X})} g(E) e^{-\beta E}
   \label{eq:partition-function}
 \end{equation}
 from the number of states $g(E)$ with energy $E$ (the \emph{density of states}).
-For the case where the base image is all black ($x_i = 0$) or all white ($x_i =
+For the case where the base image is all black ($a_i = 0$) or all white ($a_i =
 M$), we may explicitly count that the density of states
 is~(Theorem~\ref{thm:bw-g})
 \begin{equation}
@@ -291,20 +279,109 @@ algorithm~\cite{wanglandau}.
 
 \section{Methods}
 
-The Wang-Landau algorithm was implemented to determine the density of states for
-grayscale image fluctuations.
+The Wang-Landau algorithm (WL) was implemented to determine the density of
+states for grayscale image fluctuations. Our implementation adapts the algorithm
+described by Wang, Landau, et al.\ in~\cite{wanglandau,wanglandau-ajp} for
+lattice models to work on the image fluctuation model we have described
+(Appendix~\ref{sec:wanglandau-core}). The offset of the log density of states
+was set by ensuring that the number of states from $\sum_E g(E)$ gave the total
+number of states $M^N$. We then computed the entropy from the numerical density
+of states with~\eqref{eq:canonical-entropy}.
 
-% \section{Results}
+\section{Results}
 
-% TODO.
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-bw}
+  \caption{The log density of states for a black image from the Wang-Landau
+    algorithm (WL), compared to the exact result (BW). The two densities of
+  states are indistinguishable.}\label{fig:wl-bw}
+\end{figure}
 
-% \section{Discussion}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-bw-relerror}
+  \caption{The relative error in the log density of states for \num{1024} black
+    image Wang-Landau simulations. The mean density of states is indicated
+    in orange and the composite densities of states one standard deviation away
+  are dashed.}\label{fig:wl-bw-relerror}
+\end{figure}
 
-% TODO.
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-gray}
+  \caption{The log density of states for \num{1024} random grayscale image
+    Wang-Landau simulations. The black image result is provided as
+  reference in orange (BW).}\label{fig:wl-gray}
+\end{figure}
 
-% \section{Conclusion}
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-gray-S}
+  \caption{The canonical entropy computed from the simulation density of states for
+    \num{1024} random grayscale images. The entropy from the exact result for a
+  black image is shown in orange (BW).}\label{fig:wl-gray-S}
+\end{figure}
 
-% TODO.
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-gray-ES}
+  \caption{The canonical entropy for grayscale images increases quickly with
+    energy before saturating at the maximum. The entropy from the exact result
+  for a black image is shown in orange (BW).}\label{fig:wl-gray-ES}
+\end{figure}
+
+The log density of states from WL for a black image is given in
+Fig.~\ref{fig:wl-bw}. Since this is indistinguishable from the exact result, we
+quantify the error by running \num{1024} simulations for a black image with the
+same parameters for histogram flatness and $f$ tolerance as
+in~\cite{wanglandau-ajp}. The resulting relative errors are given in
+Fig.~\ref{fig:wl-bw-relerror}. This relative error is consistent with that
+in~\cite{wanglandau-ajp} for a similarly-sized 2D Ising ferromagnet, which
+establishes that the implementation of the algorithm is correct and has the
+expected error characteristics.
+
+We now consider the desired calculation of the entropy for random grayscale
+images. The WL densities of states for \num{1024} random grayscale images is
+given in Fig.~\ref{fig:wl-gray}. The corresponding entropies
+(Fig.~\ref{fig:wl-gray-S}) represent the lost information that we seek. The
+entropies for different grayscale images are similar, since the local energy
+landscapes for gray pixels are close to the same. The entropy for a black image
+is lower than for a grayscale image by almost \SI{1}{bit}, which reflects that
+the black pixel values may only flucuate up in value, rather than in both
+directions for a gray pixel value. We may also see how the entropy depends upon
+the average energy, which is the quantity we originally considered
+(Fig.~\ref{fig:wl-gray-ES}).
+
+\section{Discussion}
+
+Now that we have computed the lost information as the entropy of a fluctuating
+grayscale image, what can we learn from it? The immediate answer is nothing,
+since an emperical determination of the average energy $E$ where the difference
+between images is barely noticable is required. However, given such a
+perscription, we may regard our results as an approximation to the information
+lost in visual perception.
+
+The greatest limitation of this approximation is of course the use of a digital
+image instead of considering the light impinging on the retina. The pixels in an
+image may be considered as averages of the true continuous intensity over a
+small solid angle. However, considering a static grid of pixels in a digital
+image differs from our foveated imaging process, which features multiple
+saccades around a scene to refine points of interest.
+
+Another issue is the arbitrary number of values $M$ for the number of gray
+values, which effects the entropy value. The simplest solution is to instead
+consider the intensive quantity $\flatfrac{S}{\lg M}$, but it is unclear how to
+best generalize this to the case of color, where discretizations of different
+colorspaces may produce different results.
+
+Despite these issues, the model of fluctuating pixel values serves as a simple
+idealized system that is computationally tractable. This allows us to precisely
+specify the problem at hand and begin to work towards a solution.
+
+\section{Conclusion}
+
+TODO.
 
 \appendix
 
@@ -340,16 +417,16 @@ grayscale image fluctuations.
     \]
     which has solution
     \[
-      I(q) = k\log q
+      \tilde{I}(q) = k\log q
     \]
-    for real $k$. The condition that $I(q) \ge 0$ requires $k > 0$, which is
-    equivalent to a choice of base for the logarithm.
+    for real $k$. The condition that $\tilde{I}(q) \ge 0$ requires $k > 0$,
+    which is equivalent to a choice of base for the logarithm.
   \end{proof}
 \end{thm}
 
 \begin{thm}\label{thm:bw-g}
-  The number of tuples $(x_1,\, \ldots,\, x_N)$ with $0 \leq x_i \leq M - 1$ and
-  $\sum_i x_i = E$ is
+  The number of tuples $(a_1,\, \ldots,\, a_N)$ with $0 \leq a_i \leq M - 1$ and
+  $\sum_i a_i = E$ is
   \[
     g(E)
     = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk}.
@@ -381,7 +458,16 @@ grayscale image fluctuations.
   \end{proof}
 \end{thm}
 
+\section{Wang-Landau algorithm implementation}\label{sec:wanglandau-core}
+
+The relevant core of the Wang-Landau algorithm implementation is reproduced
+below. For the full code, see the \textsc{reu} project
+repository~\cite{rpi-reu-notebook}.
+
+\inputminted{python}{wanglandau-core.py}
+
 \nocite{*}
+\hypersetup{urlcolor=Mahogany}
 \bibliography{references}
 
 \end{document}
