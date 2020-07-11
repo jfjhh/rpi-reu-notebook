@@ -88,8 +88,8 @@
 \newcommand\sensavg[2][\dop]{\ev*{#2}_{\mkern-1.5mu{#1}}}%
 
 \begin{document}
-\title{Rensselaer \textsc{nsf} \textsc{reu} midterm report:\\
-Quantifying visual information}
+\title{Quantifying visual information loss with statistical physics\\
+Rensselaer \textsc{nsf} \textsc{reu} midterm report}
 \author{Alex Striff}
 \affiliation{Department of Physics, Reed College, Portland \textsc{or} 97202, \textsc{usa}}
 \author{Vincent Meunier}
@@ -104,8 +104,8 @@ Polytechnic Institute, Troy \textsc{ny} 12180, \textsc{usa}}
   an analogous situation in statistical physics. Using this analogy enables us
   to compute the entropy using the Wang-Landau algorithm for the density of
   states developed for use in statistical physics. Given the results, we discuss
-  potential extensions of the model that better resemble the known physical and
-  biological processes that take place in the visual system.
+  limitations of the model in comparison to the known physical and biological
+  processes that take place in the visual system.
 \end{abstract}
 \maketitle
 
@@ -264,7 +264,7 @@ In turn, we obtain the partition function
   \label{eq:partition-function}
 \end{equation}
 from the number of states $g(E)$ with energy $E$ (the \emph{density of states}).
-For the case where the base image is all black ($a_i = 0$) or all white ($a_i =
+For the case where the base image is all black ($a_i = 1$) or all white ($a_i =
 M$), we may explicitly count that the density of states
 is~(Theorem~\ref{thm:bw-g})
 \begin{equation}
@@ -373,7 +373,8 @@ Another issue is the arbitrary number of values $M$ for the number of gray
 values, which effects the entropy value. The simplest solution is to instead
 consider the intensive quantity $\flatfrac{S}{\lg M}$, but it is unclear how to
 best generalize this to the case of color, where discretizations of different
-colorspaces may produce different results.
+colorspaces may produce different results. This problem of color is avoided in
+the case of scotopic (night) vision.
 
 Despite these issues, the model of fluctuating pixel values serves as a simple
 idealized system that is computationally tractable. This allows us to precisely
@@ -381,7 +382,21 @@ specify the problem at hand and begin to work towards a solution.
 
 \section{Conclusion}
 
-TODO.
+We have described a process for computing the lost information in a fluctuating
+digital image. This simplified model serves as a small step towards knowing how
+much information our eyes can gather from what they are viewing. While this
+model is significantly different from a model of the retina and rest of the
+visual system, the approach taken through information theory and statistical
+physics may prove to be applicable in more complex models.
+
+Looking at lost information also helps to guide a quantitative understanding of
+the qualia we do see. We are able to recognize objects and faces despite varying
+noise, lighting conditions, viewing angles, and other factors. While our model
+has essentially focused on noise, a broader concept of irrelevant information
+could serve as a negative definition of the information gained in viewing an
+object. Such a concept would have strong applications in computer vision, as
+many systems struggle with recognition after simple irrelevant transformations
+like rotation.
 
 \appendix
 
@@ -462,11 +477,12 @@ TODO.
 
 The relevant core of the Wang-Landau algorithm implementation is reproduced
 below. For the full code, see the \textsc{reu} project
-repository~\cite{rpi-reu-notebook}.
+repository~\cite{rpi-reu-notebook}, which includes both the code and a notebook
+of all progress, including other approaches than the one described in this
+report.
 
 \inputminted{python}{wanglandau-core.py}
 
-\nocite{*}
 \hypersetup{urlcolor=Mahogany}
 \bibliography{references}
 
