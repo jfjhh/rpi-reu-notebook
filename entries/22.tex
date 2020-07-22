@@ -1,0 +1,94 @@
+\documentclass[../notebook.tex]{subfiles}
+
+\begin{document}
+\nbentry{July 21, 2020}{%
+  Possible (natural) image statistics topics
+}
+
+We would like to understand the distribution of natural images in the space of
+all images. Characterizations of this distribution have significant applications
+in computer vision and image compression, as we move towards more complete
+priors for images. We may also consider other classes of images, such as
+paintings, digital graphics like logos and illustrations, medical images, or
+range images of natural scenes. There are several approaches that we may take
+towards understanding such distributions. We exclude the heavily-studied
+statistics like intensity histograms, two-pixel correlation functions, joint
+Haar wavelet histograms, and power spectra in favor of these more novel and
+informative approaches: (by decreasing feasibility)
+
+\begin{enumerate}
+  \item \textbf{Occlusion models (dead leaves).}\footnote{\textsc{Doi}:
+    \href{https://doi.org/10.1023/A:1011109015675}{\texttt{10.1023/A:1011109015675}}}\@
+    A simple model for obtaining many of the usual marginal image statistics.
+    There is good quantitative agreement for single-pixel and derivative
+    statistics, and the model is scale-invariant. Covariance is power-law
+    (locally \textsc{ok}). Joint Haar wavelet contours are generally good with
+    disk leaves, but details are different since the model is simple. We could
+    consider several extensions of this model, such as adding textures,
+    different primitives, and clustering or branching the objects.
+
+  \item \textbf{Density of log-normalized patches by Voronoi
+      tessellation.}\footnote{\textsc{Doi}:
+    \href{https://doi.org/10.1023/A:1023705401078}{\texttt{10.1023/A:1023705401078}}}\@
+    If we take $3 \times 3$ patches of grayscale images and perform a particular
+    log-contrast normalization, we obtain points on $S^7$. A Voronoi tessellation
+    of $S^7$ with points that are as uniform as possible is known
+    (sphere-packing in $\RR^8$ is solved). A meaningful density of patches is
+    the number density of patches in each Voronoi cell, which tells us how
+    sparse the data are. By the contrast normalization, Gaussian patches would
+    be uniform on the cells, so the discrete KL divergence on cells gives a
+    measure of non-uniformity. The main appeal of this approach is that it
+    requires no strong assumptions like sparsity or independent components.
+    Since the original paper uses natural intensity and range images, we might
+    consider different domains like paintings.
+
+  \item \textbf{Persistent homology of high-contrast patches.}\footnote{\textsc{Doi}:
+    \href{https://doi.org/10.1007/s11263-007-0056-x}{\texttt{10.1007/s11263-007-0056-x}}}\@
+    Another approach to local behavior is to consider the persistent homology of
+    $3 \times 3$ high-contrast patches. The result is that the dense regions of
+    their patch dataset $\mathcal{M}$ form a 2-dimensional submanifold (the
+    Klein bottle) of $S^7$. After a closer reading, can this result be related
+    to the \textsc{2d} ``ideal manifold of edges'' in approach 2?
+
+  \item \textbf{\textsc{Gan}s or \textsc{vae}s for image probability
+      density estimation.}\footnote{ArXiv:
+    \href{https://arxiv.org/abs/1901.01499}{\texttt{1901.01499}}}\@
+    This preprint warns about the issues of looking at pixel-space densities,
+    and instead considers the density on latent codes. While \textsc{gan}s
+    appear to be good tools for density estimation, the issue in many dimensions
+    is that high-density images are not semantically typical images. For
+    example, the \textsc{mnist} images of 1s appear with high density, even
+    though all digits are represented. Compare how sampling from a
+    high-dimensional normal distribution produces points near the unit sphere,
+    while the highest density point is at the origin. (Not feasible but
+    relevant.)
+\end{enumerate}
+Some other things to try that are different from natural images:
+\begin{enumerate}
+  \item \textbf{Algorithms for graphics in \textsc{2d}.}\@ We could apply some
+    of the previous approaches to other ``graphics paradigms.'' Instead of
+    natural images formed by objects in space with occlusion, what about simple
+    turtle graphics or vector graphics? What is the expressive power of a
+    grammar or language (similar to L-systems) by comparison to all possible
+    images (quantitative: density) or by semantic content (qualitative). A
+    simple set of primitives could result in precise Kolmogorov complexities.
+    What are expressive primitives? Could such schemes be expanded
+    (stochastically) to form efficient algorithms for natural image compression
+    (like more artistic or smart fractal compression).
+
+  \item \textbf{Computer graphics in \textsc{3d}.}\@ Do dead leaves models, but
+    actually render \textsc{3d} scenes. Or generate datasets by varying the
+    camera position on a single scene. Ray-tracing generates range data.
+\end{enumerate}
+All of these topics result in one of two types of projects:
+\begin{itemize}
+  \item Look at small patches of images with complex methods to understand the
+    full picture of their densities.
+
+  \item Generate images from graphics primitives with simple methods to
+    understand the possible statistics and complexity of the generated images.
+\end{itemize}
+
+\end{document}
+
+
