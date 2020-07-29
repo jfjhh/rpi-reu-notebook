@@ -1,0 +1,102 @@
+\documentclass[final]{beamer}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{booktabs}
+% \usepackage[figurename=(c),labelsep=space]{caption} % Hack
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{mathtools}
+\usepackage{microtype}
+\usepackage{nicefrac}
+\usepackage{physics}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{pgffor}
+\usepackage[orientation=landscape,size=custom,height=60.96,width=91.44,scale=1.0]{beamerposter}
+\usepackage{lipsum}
+\usepackage{adjustbox}
+\usepackage{subcaption}
+
+\usepackage[sfdefault,semibold]{libertine} % a bit lighter than Times--no osf in math
+\usepackage[libertine,vvarbb]{newtxmath}
+\usepackage[scr=esstix,cal=boondoxo]{mathalfa}
+
+\usetikzlibrary{arrows, shapes.geometric}
+
+\usecolortheme[snowy]{owl}
+\usefonttheme{professionalfonts}
+% \usefonttheme{serif}
+\setbeamersize{text margin left=0pt, text margin right=0pt}
+\setbeamertemplate{blocks}[rounded][shadow=true]
+\setbeamercolor{title}{fg=white,bg=blue} % Temporary; tweak me!
+% \setbeamercolor{block title}{bg=blue!70, fg=white}
+\setbeamercolor{block title}{bg=blue, fg=white}
+\setbeamercolor{block body}{bg=black!9}
+\setbeamerfont{block title}{series=\bfseries}
+
+\usepackage{lipsum}
+
+% Hack a margin into blocks.
+\newenvironment{mblock}[1]{%
+  \begin{block}{#1}%
+    \begin{adjustbox}{minipage=\linewidth-3ex, margin=1.5ex, center}}%
+{\end{adjustbox}\end{block}}
+
+% It's a hack, but it works.
+\title
+{%
+  \parbox{0.02\textwidth}{\hspace{-0.525in}\includegraphics[width=4ex]{nsf}\hfil}%
+  \parbox{0.185\textwidth}{
+    \small\textbf{%
+      Physics \textsc{Reu}: Summer 2020
+    }\hfill\\
+  Rensselaer Polytechnic Institute\hfil}%
+  \parbox{0.54\textwidth}{\hfil\Huge{%
+        Understanding the visual world with statistical physics
+  }\hfil}%
+  \parbox{0.205\textwidth}{\hfill
+    Alex Striff \& Vincent Meunier
+  }
+}
+\author{}
+\date{}
+
+\begin{document}
+\begin{frame}[t]{}
+  \vspace{-8pt}
+  \begin{beamercolorbox}{}
+    \maketitle
+  \end{beamercolorbox}
+  \vspace{-1.5in}
+  \centering
+  \begin{columns}
+    \begin{column}{0.235\textwidth}
+      \pause%
+      \begin{mblock}{Introduction}
+        \lipsum[1]
+      \end{mblock}
+    \end{column}
+    \begin{column}{0.235\textwidth}
+      \pause%
+      \begin{mblock}{Introduction}
+        \lipsum[1]
+      \end{mblock}
+    \end{column}
+    \begin{column}{0.235\textwidth}
+      \begin{mblock}{Introduction}
+        Test
+      \end{mblock}
+    \end{column}
+    \begin{column}{0.235\textwidth}
+      \begin{mblock}{Introduction}
+        Test
+      \end{mblock}
+    \end{column}
+  \end{columns}
+\end{frame}
+\end{document}
+
