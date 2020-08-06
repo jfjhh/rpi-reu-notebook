@@ -1,0 +1,671 @@
+\documentclass[aps,reprint,floatfix]{revtex4-2}
+
+\usepackage{microtype}
+\usepackage{fix-cm} % Remove font size substitution warnings
+\usepackage{amsmath} % must be loaded before newtxmath
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{siunitx}
+\usepackage{physics}
+\usepackage[mathic=true]{mathtools}
+\usepackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{tikz}
+
+% \usepackage{etoolbox}
+% \makeatletter
+% \patchcmd{\section}{\sffamily}{\bfseries}{}{}
+% \makeatother
+
+\usepackage[semibold]{libertine} % a bit lighter than Times--no osf in math
+\usepackage[libertine,vvarbb]{newtxmath}
+\usepackage[scr=esstix,cal=boondoxo]{mathalfa}
+\usepackage{bm} % load after all math to give access to bold math
+\renewcommand\mathrm\textnormal%
+
+% \allowdisplaybreaks%
+
+\usepackage[pdfusetitle]{hyperref}
+\hypersetup{%
+  hypertexnames=false, % For compatibility with autonum
+  colorlinks,
+  allcolors=MidnightBlue,
+  citecolor=OliveGreen,
+}
+\urlstyle{same}
+\usepackage{autonum}
+
+\theoremstyle{plain}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{lem}{Lemma}
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}
+\newtheorem*{defn*}{Definition}
+\newtheorem{post}{Postulate}
+
+\graphicspath{{figs/}}
+
+\usepackage{minted}
+\setmonofont[Scale=MatchLowercase]{Iosevka}
+\setminted{%
+  fontsize=\scriptsize,
+  mathescape, style=friendly, baselinestretch=0.9, breaklines
+}
+\setminted[wolfram]{%
+  style=mathematica
+}
+
+\renewcommand\leq\leqslant%
+\renewcommand\geq\geqslant%
+
+\renewcommand\phi\varphi%
+
+
+\newcommand\im{\mathrm{i}\mkern1mu}
+\renewcommand\ln{\operatorname{\mathrm{ln}}}
+\renewcommand\lg{\operatorname{\mathrm{lg}}}
+\renewcommand\log{\operatorname{\mathrm{log}}}
+\renewcommand\exp{\operatorname{\mathrm{exp}}}
+\renewcommand\tr{\operatorname{\mathrm{tr}}}
+\renewcommand\det{\operatorname{\mathrm{det}}}
+
+\newcommand\ZZ{\mathbb{Z}}
+\newcommand\QQ{\mathbb{Q}}
+\newcommand\CC{\mathbb{C}}
+\newcommand\RR{\mathbb{R}}
+
+\newcommand{\opr}[1]{\mathsf{#1}}%
+\newcommand\idsopr{\mathbb{1}}
+\newcommand\idopr{\opr{I}}
+\newcommand\sopr\mathcal%
+\newcommand\cat\mathsf%
+\newcommand\herm{\operatorname{\mathrm{He}}}
+
+% \newcommand\lprod[2]{{\qty(#1,#2)}}
+\newcommand\lprod\ip%
+
+\newcommand\hilb{\mathcal{H}}
+\newcommand\liou{\mathcal{L}}
+\newcommand\ham{\opr{H}}
+\newcommand\dop{\opr{ρ}}
+\newcommand\tprod\otimes%
+
+\newcommand\ensavg[2][\dop]{\ev{#2}_{\mkern-1.5mu{#1}}}%
+\newcommand\sensavg[2][\dop]{\ev*{#2}_{\mkern-1.5mu{#1}}}%
+
+\begin{document}
+\title{Understanding visual complexity with statistical physics\\
+Rensselaer \textsc{nsf} \textsc{reu} final report}
+\author{Alex Striff}
+\affiliation{Department of Physics, Reed College, Portland \textsc{or} 97202, \textsc{usa}}
+\author{Vincent Meunier}
+\affiliation{Department of Physics, Applied Physics, and Astronomy, Rensselaer
+Polytechnic Institute, Troy \textsc{ny} 12180, \textsc{usa}}
+\date{August 7, 2020}
+\begin{abstract}
+  We attribute a notion of lost information (entropy) to digital images based on
+  considering pixel value fluctuations that are considered imperceptible or
+  irrelevant to understanding the content of an image. This information is
+  precisely defined in the framework of information theory, and is influenced by
+  an analogous situation in statistical physics. Using this analogy enables us
+  to compute the entropy using the Wang-Landau algorithm for the density of
+  states developed for use in statistical physics. Given the results, we discuss
+  limitations of the model in comparison to the known physical and biological
+  processes that take place in the visual system.
+\end{abstract}
+\maketitle
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+The human visual system is crucial for survival. While this system gathers
+useful information from our environment, it remains imperfect. A precise
+understanding of the information lost in sensation may guide future
+understanding of the information we do gather, as well as inform the design of
+image compression and reconstruction algorithms for human consumption.
+
+As a simple model for this lossy process, we consider slightly varying the pixel
+values of a grayscale image to produce different images that are not perceived
+to be different, or that are not different enough to change the qualitative
+impression of the image on an observer. The freedom to choose different modified
+images represents information that is lost. What follows is a description of how
+we can quantify this information, and then how we can calculate it for
+particular images.
+
+We first define what we mean by information, complexity, and entropy in
+Sec.~\ref{sec:bg}. With this backdrop in place, we then look at different
+perspectives on visual complexity. We start with the \emph{psychophysical
+perspective} and consider the human visual system in Sec.~\ref{sec:vision}. The
+\emph{natural perspective} looks at images of the environment that the visual
+system processes. These images have well-studied statistics that we will discuss
+in Sec.~\ref{sec:natstat}. Another approach is to study differences between
+images. To this end, we propose an ensemble of images that are different from a
+given image in Sec.~\ref{sec:wl}. This \emph{ensemble perspective} considers the
+information to describe the modification to be much like the information to
+specify a microstate in statistical physics. The natural and ensemble
+perspectives usually work with grayscale images. The complications associated
+with considering color arise from the choice of coordinates for the color space.
+This is addressed by the \emph{coordinate perspective} in Sec.~\ref{sec:color}.
+Finally, we look past data on lattices like the fovea or sets of pixels, and
+instead hold the processes that create the data to be responsible for their
+complexity. The \emph{algorithmic perspective} of Sec.~\ref{sec:graphics}
+considers programs as explanations of complexity, with commonly-used computer
+graphics techniques serving as upper bounds on the true algorithmic complexity.
+All of these perspectives contribute to defining the notion of visual
+complexity.
+
+% \textbf{Tie together:}
+% \begin{itemize}
+%   \item Local neighborhood operations
+%   \item Astro. (wavelet) MEM reconstruction
+%   \item The visual system and receptive fields (rel. Ruderman Gaussian channels to WL?)
+%   \item Relative information between coordinates
+%   \item Natural image statistics (and inverse neighborhood attempt?)
+%   \item Computational complexity, fractals, and graphics
+%   \item Wang-Landau images
+%   \item Bayesian inference, Markovian random fields, and machine learning
+% \end{itemize}
+
+\section{Information, Entropy, and Complexity}\label{sec:bg}
+
+We generally use these terms as synonyms for the same kind of idea, but with
+different connotations from information theory, statistical physics, and
+computer science, respectively.
+
+\subsection{Information Theory}\label{sec:information-theory}
+
+A mathematical notion of information is provided by the work of
+Shannon~\cite{shannon1948mathematical}. In the view of classical information
+theory, \emph{information} is a property of an event, in the sense of a random
+process. To this end, we consider a random variable $X$ with support
+$\mathcal{X}$ and probabilities $p(x)$ for $x \in \mathcal{X}$. As regards
+communication, the information $I(x)$ required to describe the event $X = x$
+should satisfy intuitive axioms:
+\begin{itemize}
+  \item If $p(x) = 1$, the event is certain to happen and no information is
+    required to describe its occurrence: $I(x) = 0$.
+  \item If $p(x) < p(x')$, then $x$ is less likely to happen, and ought to
+    require more information to describe: $I(x) > I(x') \geq 0$. As an analogy,
+    compare the phrases ``nightly'' and ``once in a full moon:'' The less
+    probable event has a longer description.
+  \item For independent events $x$ and $y$, it makes no difference to describe
+    the combined event $(x,\, y)$ instead of each event individually: $I(x,\, y)
+    = I(x) + I(y)$.
+\end{itemize}
+
+Given these axioms, the only solution is the
+\emph{self-information}~(Theorem~\ref{thm:self-information})
+\begin{equation}
+  I(x)
+  = -\log p(x),
+  \label{eq:self-information}
+\end{equation}
+where the base of the logarithm determines the units of information: base two
+($\lg$) gives \emph{bits} and base $e$ ($\ln$) gives \emph{nats}. The
+information of the entire random variable may then be defined as the average
+of~\eqref{eq:self-information} over all events, which is known as the
+\emph{Shannon entropy}
+\begin{equation}
+  H
+  = -\sum_{x \in \mathcal{X}} p(x) \log p(x).
+  \label{eq:shannon-entropy}
+\end{equation}
+The Shannon entropy may also be derived from intuitive axioms similar to those
+for the self information~\cite{shannon1948mathematical,jaynes1957information}.
+The continuous version of~\eqref{eq:shannon-entropy} is known as the
+\emph{differential entropy}
+\begin{equation}
+  h
+  = -\int_{\mathcal{X}} p(x) \log p(x) \dd{x},
+  \label{eq:differential-entropy}
+\end{equation}
+which is insufficient as a notion of information because it may change with
+different coordinates. Instead, we consider the \emph{relative entropy} or
+\emph{Kullback-Leibler divergence} from a reference distribution $q$ to $p$
+defined by
+\begin{equation}
+  D_{KL}(p \mathbin{\|} q)
+  = \int_{\mathcal{X}} p(x) \log \frac{p(x)}{q(x)} \dd{x},
+  \label{eq:kl-divergence}
+\end{equation}
+which is invariant under parameter transformations and
+nonnegative~\cite[p.~243]{cover}.
+
+\subsection{The maximum entropy principle (\textsc{MaxEnt})}\label{sec:maxent}
+
+A physicist familiar with statistical mechanics might wonder why Shannon's
+entropy~\eqref{eq:shannon-entropy} has the same mathematical form as the
+thermodynamic state variable for temperature
+\begin{equation}
+  S
+  = -k_B \sum_{x \in \mathcal{X}} p(x) \ln p(x),
+  \label{eq:gibbs-entropy}
+\end{equation}
+which we may call the \emph{Gibbs entropy}. This connection between information
+theory and statistical physics was developed by E. T. Jaynes to produce the
+maximum entropy principle (\textsc{MaxEnt})~\cite{jaynes1957information}. We
+would like to make predictions about systems given some macroscopic quantities
+that we observe. To do so, we must assign probabilities to microstates, which we
+ought to do in an unbiased way, subject to the constraints that average
+macroscopic quantities take their observed values. Jaynes argues that this
+unbiased assignment corresponds to maximizing the entropy, and describes how
+this subjective assignment can be expected to make physical predictions, while
+an objective assignment of probabilities is required to understand the
+microscopic mechanisms behind these predictions. In particular, maximizing the
+entropy with constrained average energy produces the canonical
+distribution~\cite{jaynes1957information}
+\[
+  p(x)
+  = \frac{1}{Z}e^{-\beta E(x)},
+\]
+where $\beta = \flatfrac{1}{k_B T}$ and the \emph{partition function} is
+\[
+  Z
+  = \sum_{x \in \mathcal{X}} e^{-\beta E(x)},
+\]
+with the variates $x$ being different states of a system.
+
+\subsection{Algorithmic entropy}
+
+A more general notion of entropy is found in an algorithmic approach. We say a
+\emph{computer} takes a finite binary string $p \in \qty{0,\, 1}^*$ called a
+\emph{program}, and either produces a finite string as output or produces an
+infinite string and does not halt.
+\begin{defn*}\label{def:kolmogorov}
+  Given an object $x$ (representable as a binary string), its \emph{Kolmogorov
+  complexity} $K(x)$ is defined as the length of the shortest program that
+  outputs the object when executed on a computer.
+\end{defn*}
+The canonical choice of computer is a universal Turing machine $\mathcal{U}$,
+but the complexity from different computer $\mathcal{A}$ (like a Python
+interpreter) differs by only a constant: $K_{\mathcal{U}}(x) \leq
+K_{\mathcal{A}}(x) + c_{\mathcal{A}}$~\cite[p.~467]{cover}. That is, the
+universal computer $\mathcal{U}$ may compute $x$ by simulating $\mathcal{A}$.
+For long strings $x$, the constant is insignificant. We may also define the
+\emph{conditional Kolmogorov complexity} $K(x \mathbin{|} l(x))$, where the
+computer already knows the length of $x$.
+
+The generality of Kolmogorov complexity is apparent when we consider stochastic
+processes. Similar to in Sec.~\ref{sec:information-theory}, consider a
+stochastic process $\qty{X_i}$ with the $X_i$ drawn \textsc{iid} from the finite set
+$\mathcal{X}$ with \textsc{pmf} $p(x)$ for $x \in \mathcal{X}$.
+Then~\cite[p.~473]{cover}
+\begin{equation}
+  H(X)
+  = \lim_{n \to \infty} \frac{1}{n}\ev{K(X^n \mathbin{|} n)}.
+  \label{eq:complexity-entropy}
+\end{equation}
+The length of an optimal compression program approaches the entropy limit. In
+this sense, the Kolmogorov complexity is a generalization of entropy.
+
+In practice, we do not use minimum-length programs or know Kolmogorov
+complexities, since in general they are not computable~\cite[p.~482]{cover}.
+However, they are useful in applications of Occam's razor. To avoid multiplying
+our explanations beyond necessity, we choose the least complex explanation that
+is correct.
+
+\section{Human vision}\label{sec:vision}
+
+The psychophysical perspective on visual complexity focuses on the light
+entering the eye and the various responses generated in different regions of the
+brain.
+
+\subsection{The light field}\label{sec:light-field}
+
+We may describe the light field from a scene impinging upon the eye with the
+\emph{plenoptic function} $L$. This function gives the spectral radiance of
+light with wavelength $\lambda$ along a ray specified by spherical angles
+$\theta$ and $\phi$ at a given point $(\bm{x},\, t)$ in space and time. All of
+the information about how a scene looks is contained in the function
+$L(\bm{x},\, t,\, \theta,\, \phi,\, \lambda)$. The creation of \emph{light field
+cameras} to capture the whole light field that would enter the eye is a topic
+of active research~\cite{light-field}. While our eyes and conventional cameras
+use many photosensitive elements, significant capture of the light field may be
+done with only one intensity-sensitive element. This is simple enough that the
+author previously created a proof of concept \emph{single-pixel camera} for an
+undergraduate laboratory project~\cite{csjlab,single-pixel}. Such a \emph{single-pixel
+camera} and advances in light-field cameras are made feasible by a
+\emph{compressive sensing} technique which leverages the statistics of natural
+images discussed in Sec.~\ref{sec:natstat}~\cite{compressed-sensing}.
+
+\subsection{The visual system}\label{sec:visual-system}
+
+The early stages of processing in the visual system recognize local properties
+like color, edge orientation, motion, and binocular disparity. These properties
+arise naturally from the plenoptic function, as discussed in~\cite{plenoptic}.
+More precisely, one may show simple images to an animal and probe the responses
+of neurons in affected regions of the brain, like the lateral geniculate nucleus
+(\textsc{lgn}) and primary visual cortex (\textsc{v1}). By varying the stimulus,
+one may develop a map of how the neuron responds as a function of position in
+$\theta$ and $\phi$. This map, called the \emph{receptive field} of the neuron,
+is generally set up to capture an aspect of the plenoptic function. For example,
+the receptive fields of \emph{simple cells} in \textsc{v1} are similar to Gabor
+filters, and are used to detect edges with a particular
+orientation~\cite{plenoptic}. Van Hateren and Ruderman have shown that the
+independent components of natural image sequences give similarly shaped filters,
+supporting the hypothesis that the simple cell receptive fields are tuned to
+encode natural images well~\cite{strf}.
+
+\section{Natural image statistics}\label{sec:natstat}
+
+Images of the natural world are easily distinguishable from man-made images or
+random noise. This difference is reflected in the statistical structure of
+natural images, and is generally robust across variations in subject matter or
+lighting. For example, the power spectrum of a natural image (averaged over
+orientations), scales like $k^{-2 + \eta}$, where $k$ is the spatial frequency
+and $\eta$ is small. This and the other statistics discussed in~\cite{ruderman}
+establish that natural images are approximately \emph{scale-invariant}. The
+scale invariance of natural images is mostly explained by
+occlusion~\cite{dead-leaves}. Different objects appear to be different sizes and
+occlude one another, causing an image to depict multiple scales. However, the
+scale invariance of a natural image may also reflect the scale invariance of
+objects it depicts: nature is full of fractals~\cite{fractals-everywhere}.
+
+\section{An ensemble of images}\label{sec:wl}
+
+TODO:\@ Introduce idea and reorient supporting text towards the \emph{ensemble
+of different images} rather than towards error and ``lost information.''
+
+\subsection{Theory}\label{sec:wl-theory}
+
+\begin{figure}
+  \centering
+  \tikzstyle{emph} = [fill=MidnightBlue]
+  \begin{tikzpicture}[scale=0.5]%, every node/.style={transform shape}]
+    \node[left] at (1.25*1, 1 + 0.5) {\small$1$};
+    \node[left] at (1.25*1, 5 + 0.5) {\small$M$};
+    \node[below] at (1.25*1 + 0.5,1) {\small$1$};
+    \node[below] at (1.25*4 + 0.5,1) {\small$N$};
+    \fill[gray] (1.25*1,4) rectangle ++(1,1);
+    \fill[emph] (1.25*1,3) rectangle ++(1,1);
+    \fill[gray] (1.25*2,1) rectangle ++(1,1);
+    \fill[emph] (1.25*2,5) rectangle ++(1,1);
+    \fill[gray] (1.25*4,2) rectangle ++(1,1);
+    \fill[emph] (1.25*4,4) rectangle ++(1,1);
+    \draw[emph] (1.25*4 + 1, 2 + 0.5) -- ++(0.75,0);
+    \draw[emph] (1.25*4 + 1, 4 + 0.5) -- ++(0.75,0);
+    \draw[emph,<->,thick] (1.25*4 + 1.5, 2 + 0.5) -- ++(0,2)
+      node[midway,right]{$\Delta E_N = 2$};
+    \node (ellipses) at (1.25*3 + 0.5, 3 + 0.5) {$\cdots$};
+    \foreach \x in {1,2,4} {%
+      \foreach \y in {1,...,5} {%
+        \draw (1.25*\x,\y) rectangle ++(1,1);
+      }
+    }
+  \end{tikzpicture}
+  \caption{The energy difference between base image pixel values
+    (\textcolor{gray}{$\blacksquare$}) and modified image pixel values
+    (\textcolor{MidnightBlue}{$\blacksquare$}).
+  }\label{fig:image-levels}
+\end{figure}
+
+Given a base image $A$ with $N$ pixels which take integer gray values $1 \leq
+a_i \leq M$, we define the \emph{energy} of a different image $B$ with gray
+values $1 \leq b_i \leq M$ as
+\[
+  E_A(B)
+  = \sum_{i=1}^N \abs{a_i - b_i},
+\]
+as depicted in Fig.~\ref{fig:image-levels}.
+
+We would like to consider all possible modified images, but focus on images with
+a typical value for the energy which indicates the size of fluctuations we are
+considering. We do this by assigning a probability distribution to the images
+with constrained average energy. Given the results of Sec.~\ref{sec:maxent}, we
+choose the \textsc{MaxEnt} distribution, which we may consider as a canonical
+ensemble. By thinking of our images as a physical system, we may apply tools
+from statistical mechanics. We would like to know the entropy of the
+\textsc{MaxEnt} distribution, which we will compute with the partition function as
+\begin{equation}
+  \flatfrac{S}{k_B}
+  = \beta E + \ln Z.
+  \label{eq:canonical-entropy}
+\end{equation}
+In turn, we obtain the partition function
+\begin{equation}
+  Z
+  = \sum_{E \in E(\mathcal{X})} g(E) e^{-\beta E}
+  \label{eq:partition-function}
+\end{equation}
+from the number of states $g(E)$ with energy $E$ (the \emph{density of states}).
+For the case where the base image is all black ($a_i = 1$) or all white ($a_i =
+M$), we may explicitly count that the density of states
+is~(Theorem~\ref{thm:bw-g})
+\begin{equation}
+  g(E)
+  = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk}.
+  \label{eq:bw-g}
+\end{equation}
+However, the situation for general grayscale images becomes more complicated.
+For this reason and the ability to analyze more complex systems, we determine
+the density of states numerically using the Wang-Landau
+algorithm~\cite{wanglandau}.
+
+\subsection{Methods}\label{sec:wl-methods}
+
+The Wang-Landau algorithm (WL) was implemented to determine the density of
+states for grayscale image fluctuations. Our implementation adapts the algorithm
+described by Wang, Landau, et al.\ in~\cite{wanglandau,wanglandau-ajp} for
+lattice models to work on the image fluctuation model we have described
+(Appendix~\ref{sec:wanglandau-core}). The offset of the log density of states
+was set by ensuring that the number of states from $\sum_E g(E)$ gave the total
+number of states $M^N$. We then computed the entropy from the numerical density
+of states with~\eqref{eq:canonical-entropy}.
+
+\subsection{Results}\label{sec:wl-results}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-bw}
+  \caption{The log density of states for a black image from the Wang-Landau
+    algorithm (WL), compared to the exact result (BW). The two densities of
+  states are indistinguishable.}\label{fig:wl-bw}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-bw-relerror}
+  \caption{The relative error in the log density of states for \num{1024} black
+    image Wang-Landau simulations. The mean density of states is indicated
+    in orange and the composite densities of states one standard deviation away
+  are dashed.}\label{fig:wl-bw-relerror}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-gray}
+  \caption{The log density of states for \num{1024} random grayscale image
+    Wang-Landau simulations. The black image result is provided as
+  reference in orange (BW).}\label{fig:wl-gray}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-gray-S}
+  \caption{The canonical entropy computed from the simulation density of states for
+    \num{1024} random grayscale images. The entropy from the exact result for a
+  black image is shown in orange (BW).}\label{fig:wl-gray-S}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=\linewidth]{wanglandau-gray-ES}
+  \caption{The canonical entropy for grayscale images increases quickly with
+    energy before saturating at the maximum. The entropy from the exact result
+  for a black image is shown in orange (BW).}\label{fig:wl-gray-ES}
+\end{figure}
+
+The log density of states from WL for a black image is given in
+Fig.~\ref{fig:wl-bw}. Since this is indistinguishable from the exact result, we
+quantify the error by running \num{1024} simulations for a black image with the
+same parameters for histogram flatness and $f$ tolerance as
+in~\cite{wanglandau-ajp}. The resulting relative errors are given in
+Fig.~\ref{fig:wl-bw-relerror}. This relative error is consistent with that
+in~\cite{wanglandau-ajp} for a similarly-sized 2D Ising ferromagnet, which
+establishes that the implementation of the algorithm is correct and has the
+expected error characteristics.
+
+We now consider the desired calculation of the entropy for random grayscale
+images. The WL densities of states for \num{1024} random grayscale images is
+given in Fig.~\ref{fig:wl-gray}. The corresponding entropies
+(Fig.~\ref{fig:wl-gray-S}) represent the lost information that we seek. The
+entropies for different grayscale images are similar, since the local energy
+landscapes for gray pixels are close to the same. The entropy for a black image
+is lower than for a grayscale image by almost \SI{1}{bit}, which reflects that
+the black pixel values may only fluctuate up in value, rather than in both
+directions for a gray pixel value. We may also see how the entropy depends upon
+the average energy, which is the quantity we originally considered
+(Fig.~\ref{fig:wl-gray-ES}). As expected, this tends towards the log density of
+states as the canonical and microcanonical ensembles coincide in the
+thermodynamic limit of large $N$ and $M$.
+
+\subsection{Discussion}\label{sec:wl-discussion}
+
+Now that we have computed the lost information as the entropy of a fluctuating
+grayscale image, what can we learn from it? The immediate answer is nothing,
+since an empirical determination of the average energy $E$ where the difference
+between images is barely noticeable is required. However, given such a
+prescription, we may regard our results as an approximation to the information
+lost in visual perception.
+
+The greatest limitation of this approximation is of course the use of a digital
+image instead of considering the light impinging on the retina. The pixels in an
+image may be considered as averages of the true continuous intensity over a
+small solid angle. However, considering a static grid of pixels in a digital
+image differs from our foveated imaging process, which features multiple
+saccades around a scene to refine points of interest.
+
+Another issue is the arbitrary number of values $M$ for the number of gray
+values, which affects the entropy value. The simplest solution is to instead
+consider the intensive quantity $\flatfrac{S}{\lg M}$, but it is unclear how to
+best generalize this to the case of color, where discretizations of different
+color spaces may produce different results. This problem of color is avoided in
+the case of scotopic (night) vision.
+
+Despite these issues, the model of fluctuating pixel values serves as a simple
+idealized system that is computationally tractable. This allows us to precisely
+specify the problem at hand and begin to work towards a solution.
+
+\section{Color and choice of coordinates}\label{sec:color}
+
+TODO.
+
+\section{Algorithmic complexity of natural images}\label{sec:graphics}
+
+TODO.
+
+\section{Conclusion}
+
+We have described a process for computing the lost information in a fluctuating
+digital image. This simplified model serves as a small step towards knowing how
+much information our eyes can gather from what they are viewing. While this
+model is significantly different from a model of the retina and rest of the
+visual system, the approach taken through information theory and statistical
+physics may prove to be applicable in more complex models.
+
+Looking at lost information also helps to guide a quantitative understanding of
+the qualia we do see. We are able to recognize objects and faces despite varying
+noise, lighting conditions, viewing angles, and other factors. While our model
+has essentially focused on noise, a broader concept of irrelevant information
+could serve as a negative definition of the information gained in viewing an
+object. Such a concept would have strong applications in computer vision, as
+many systems struggle with recognition after simple irrelevant transformations
+like rotation.
+
+\section{Acknowledgements}
+
+TODO.
+
+\appendix
+
+\section{Theorems}
+
+\begin{thm}\label{thm:self-information}
+  The only twice continuously differentiable function $I(x)$ that satisfies the
+  axioms in Sec.~\ref{sec:information-theory} is the self-information $I(x) =
+  -\log p(x)$.
+  \begin{proof}
+    Consider independent events $x$ and $y$ with probabilities $p$ and $p'$. The
+    axioms only concern the probabilities of the events, so we may express the
+    information as $I(x) = \tilde{I}(p(x))$. Then as proposed,
+    \[
+      I(x,\, y)
+      = \tilde{I}(pp')
+      = \tilde{I}(p) + \tilde{I}(p')
+    \]
+    by independence. Taking the partial derivative with respect to $p$ gives
+    \[
+      p' \tilde{I}'(pp')
+      = \tilde{I}'(p),
+    \]
+    and then taking the partial derivative with respect to $p'$ gives
+    \[
+      \tilde{I}'(pp') + pp' \tilde{I}''(pp')
+      = 0.
+    \]
+    We may then define $q = pp'$ to obtain the differential equation
+    \[
+      \dv{q}\qty(q \tilde{I}'(q))
+      = 0,
+    \]
+    which has solution
+    \[
+      \tilde{I}(q) = k\log q
+    \]
+    for real $k$. The condition that $\tilde{I}(q) \ge 0$ requires $k > 0$,
+    which is equivalent to a choice of base for the logarithm.
+  \end{proof}
+\end{thm}
+
+\begin{thm}\label{thm:bw-g}
+  The number of tuples $(a_1,\, \ldots,\, a_N)$ with $0 \leq a_i \leq M - 1$ and
+  $\sum_i a_i = E$ is
+  \[
+    g(E)
+    = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk}.
+  \]
+  \begin{proof}
+    Ordinary generating functions provide the solution~\cite{genfunc}. We represent the sum $E$
+    as the exponent of a integer polynomial in $z$ in the following way. For the
+    tuple $(x_1,\, x_2)$, we represent $x_1$ as $z^{x_1}$ and $x_2$ as
+    $z^{x_2}$. Together, we have $z^{x_1} z^{x_2}$, which gives the monomial
+    $z^{x_1 + x_2} = z^E$ for this tuple. We may then find $g(E)$ as the
+    coefficient of $z^E$ in
+    \[
+      {\qty(1 + \cdots + z^{M-1})}^N.
+    \]
+    Expanding using the binomial theorem gives
+    \begin{align}
+      {\qty(\frac{1 - z^M}{1 - z})}^N
+      &= \sum_{k=0}^N {(-1)}^k \binom{N}{k} z^{Mk}
+      \sum_{j=0}^\infty {(-1)}^j \binom{-N}{j} z^j \\
+      &= \sum_{k=0}^N \sum_{j=0}^\infty {(-1)}^k \binom{N}{k}
+      \binom{N + j - 1}{j} z^{Mk + j}.
+    \end{align}
+    The value of $j$ for $z$ to have exponent $E$ is $j = E - Mk$, so the
+    coefficient of $z^E$ in the polynomial is
+    \begin{equation}
+      g(E)
+      = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk},
+    \end{equation}
+    where the limits of summation are set by the binomial coefficients.
+  \end{proof}
+\end{thm}
+
+\section{Wang-Landau algorithm implementation}\label{sec:wanglandau-core}
+
+The relevant core of the Wang-Landau algorithm implementation is reproduced
+below. For the full code, see the \textsc{reu} project
+repository~\cite{rpi-reu-notebook}, which includes both the code and a notebook
+of all progress, including other approaches than the one described in this
+report.
+
+\inputminted{python}{wanglandau-core.py}
+
+\hypersetup{urlcolor=Mahogany}
+\bibliography{references}
+
+\end{document}
+
