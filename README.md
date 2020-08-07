@@ -1,9 +1,14 @@
 # RPI 2020 REU [Notebook](notebook.pdf)
 
-This repository contains my notebook and code from the NSF REU at Rensselaer
-Polytechnic Institute in the summer of 2020. Due to COVID-19, the REU was
-conducted remotely with my advisor, [Professor Vincent
-Meunier](https://faculty.rpi.edu/vincent-meunier).
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3937514.svg)](https://doi.org/10.5281/zenodo.3937514)
+
+This repository contains my notebook, presentations, reports, and code from the
+NSF REU at Rensselaer Polytechnic Institute in the summer of 2020. Due to
+COVID-19, the REU was conducted remotely with my advisor, [Professor Vincent
+Meunier](https://faculty.rpi.edu/vincent-meunier). To read the contents of the
+project, start with the [final report](final-report/final-report-striffa.pdf).
+The details, like the implementation of the Wang-Landau algorithm, are found in
+the [extensive notebook](notebook.pdf).
 
 ## Building the notebook
 
