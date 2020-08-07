@@ -103,70 +103,68 @@ Rensselaer \textsc{nsf} \textsc{reu} final report}
 Polytechnic Institute, Troy \textsc{ny} 12180, \textsc{usa}}
 \date{August 7, 2020}
 \begin{abstract}
-  We attribute a notion of lost information (entropy) to digital images based on
-  considering pixel value fluctuations that are considered imperceptible or
-  irrelevant to understanding the content of an image. This information is
-  precisely defined in the framework of information theory, and is influenced by
-  an analogous situation in statistical physics. Using this analogy enables us
-  to compute the entropy using the Wang-Landau algorithm for the density of
-  states developed for use in statistical physics. Given the results, we discuss
-  limitations of the model in comparison to the known physical and biological
-  processes that take place in the visual system.
+  An image of natural scene may be described in a few words, yet an image of
+  static requires describing all of the pixel values. We call this property of
+  images visual complexity. Different perspectives for understanding why natural
+  images have low visual complexity have wide applications in fields like
+  computer vision and image compression. This \textsc{reu} project reviews
+  conventional approaches to visual complexity related to the field of natural
+  image statistics, and proposes two new perspectives on visual complexity which
+  do not require such statistics: a notion of information for an statistical
+  ensemble created by modifying an image, and a notion of how informative
+  different coordinate systems are for describing points from a probability
+  distribution. Taken together, these different perspectives form a framework
+  for understanding visual complexity in a variety of images.
 \end{abstract}
 \maketitle
 
+{\small
 \tableofcontents
+}
 \newpage
 
 \section{Introduction}
 
-The human visual system is crucial for survival. While this system gathers
-useful information from our environment, it remains imperfect. A precise
-understanding of the information lost in sensation may guide future
-understanding of the information we do gather, as well as inform the design of
-image compression and reconstruction algorithms for human consumption.
-
-As a simple model for this lossy process, we consider slightly varying the pixel
-values of a grayscale image to produce different images that are not perceived
-to be different, or that are not different enough to change the qualitative
-impression of the image on an observer. The freedom to choose different modified
-images represents information that is lost. What follows is a description of how
-we can quantify this information, and then how we can calculate it for
-particular images.
+Why is it that thousands of pixels and millions of possible colors are required
+to represent images from the natural world on computers, yet that the scene may
+be reasonably described as a landscape of a lake at sunset in only these few
+words? In more detail, an image is worth a thousand words, yet the file size may
+be millions of binary machine words. We call this phenomenon \emph{visual
+complexity}. We seek systematic ways to understand the information content or
+complexity in images. How are the handful of salient objects present in a scene
+related to all of the pixel values captured by a camera, or to the signals in
+the brain generated from the eyes? Different notions of visual complexity could
+aid progress in fields like computer vision and image compression. For example,
+if a computer could render an image from something like a human language
+description, file sizes could be much smaller and computer vision tasks like
+face recognition or quality control could be improved.
 
 We first define what we mean by information, complexity, and entropy in
 Sec.~\ref{sec:bg}. With this backdrop in place, we then look at different
-perspectives on visual complexity. We start with the \emph{psychophysical
-perspective} and consider the human visual system in Sec.~\ref{sec:vision}. The
-\emph{natural perspective} looks at images of the environment that the visual
-system processes. These images have well-studied statistics that we will discuss
-in Sec.~\ref{sec:natstat}. Another approach is to study differences between
-images. To this end, we propose an ensemble of images that are different from a
-given image in Sec.~\ref{sec:wl}. This \emph{ensemble perspective} considers the
-information to describe the modification to be much like the information to
-specify a microstate in statistical physics. The natural and ensemble
-perspectives usually work with grayscale images. The complications associated
-with considering color arise from the choice of coordinates for the color space.
-This is addressed by the \emph{coordinate perspective} in Sec.~\ref{sec:color}.
-Finally, we look past data on lattices like the fovea or sets of pixels, and
-instead hold the processes that create the data to be responsible for their
-complexity. The \emph{algorithmic perspective} of Sec.~\ref{sec:graphics}
-considers programs as explanations of complexity, with commonly-used computer
-graphics techniques serving as upper bounds on the true algorithmic complexity.
-All of these perspectives contribute to defining the notion of visual
-complexity.
+perspectives on visual complexity.
 
-% \textbf{Tie together:}
-% \begin{itemize}
-%   \item Local neighborhood operations
-%   \item Astro. (wavelet) MEM reconstruction
-%   \item The visual system and receptive fields (rel. Ruderman Gaussian channels to WL?)
-%   \item Relative information between coordinates
-%   \item Natural image statistics (and inverse neighborhood attempt?)
-%   \item Computational complexity, fractals, and graphics
-%   \item Wang-Landau images
-%   \item Bayesian inference, Markovian random fields, and machine learning
-% \end{itemize}
+We identify a conventional approach to visual complexity in the literature. This
+heap of ideas may be roughly separated into three interconnected perspectives.
+We start with the overarching \emph{natural perspective} in
+Sec.~\ref{sec:natstat}, which looks at the statistics of images from the natural
+world. The \emph{psychophysical perspective} considers the human visual system
+in Sec.~\ref{sec:vision}. Finally, we look past data on lattices like the fovea
+or sets of pixels, and instead hold the processes that create the data to be
+responsible for their complexity. The \emph{algorithmic perspective} of
+Sec.~\ref{sec:graphics} considers programs as explanations of complexity, with
+commonly-used computer graphics techniques serving as upper bounds on the true
+algorithmic complexity.
+
+We propose a new perspective on the information content of an image modification
+that is inspired by statistical physics. To this end, we propose an ensemble of
+images that are different from a given image in Sec.~\ref{sec:wl}. This
+\emph{ensemble perspective} considers the information to describe the
+modification to be much like the information to specify a microstate in
+statistical physics. The natural and ensemble perspectives usually work with
+grayscale images. The complications associated with considering color arise from
+the choice of coordinates for the color space. This is addressed by the
+\emph{coordinate perspective} that we propose in Sec.~\ref{sec:color}. All of
+these perspectives contribute to defining the notion of visual complexity.
 
 \section{Information, Entropy, and Complexity}\label{sec:bg}
 
@@ -231,7 +229,7 @@ defined by
   \label{eq:kl-divergence}
 \end{equation}
 which is invariant under parameter transformations and
-nonnegative~\cite[p.~243]{cover}.
+is nonnegative~\cite[p.~243]{cover}.
 
 \subsection{The maximum entropy principle (\textsc{MaxEnt})}\label{sec:maxent}
 
@@ -306,6 +304,21 @@ However, they are useful in applications of Occam's razor. To avoid multiplying
 our explanations beyond necessity, we choose the least complex explanation that
 is correct.
 
+\section{Natural image statistics}\label{sec:natstat}
+
+Images of the natural world are easily distinguishable from man-made images or
+random noise. This difference is reflected in the statistical structure of
+natural images, and is generally robust across variations in subject matter or
+lighting. For example, the power spectrum of a natural image (averaged over
+orientations), scales like $k^{-2 + \eta}$, where $k$ is the spatial frequency
+and $\eta$ is small. This and the other statistics discussed in~\cite{ruderman}
+establish that natural images are approximately \emph{scale-invariant}. The
+scale invariance of natural images is mostly explained by
+occlusion~\cite{dead-leaves}. Different objects appear to be different sizes and
+occlude one another, causing an image to depict multiple scales. However, the
+scale invariance of a natural image may also reflect the scale invariance of
+objects it depicts: nature is full of fractals~\cite{fractals-everywhere}.
+
 \section{Human vision}\label{sec:vision}
 
 The psychophysical perspective on visual complexity focuses on the light
@@ -325,10 +338,11 @@ of active research~\cite{light-field}. While our eyes and conventional cameras
 use many photosensitive elements, significant capture of the light field may be
 done with only one intensity-sensitive element. This is simple enough that the
 author previously created a proof of concept \emph{single-pixel camera} for an
-undergraduate laboratory project~\cite{csjlab,single-pixel}. Such a \emph{single-pixel
-camera} and advances in light-field cameras are made feasible by a
-\emph{compressive sensing} technique which leverages the statistics of natural
-images discussed in Sec.~\ref{sec:natstat}~\cite{compressed-sensing}.
+undergraduate laboratory project~\cite{csjlab,single-pixel}. Such a
+\emph{single-pixel camera} and advances in light-field cameras are made feasible
+by a \emph{compressive sensing} technique which leverages the power-law
+statistics of natural images discussed in
+Sec.~\ref{sec:natstat}~\cite{compressed-sensing}.
 
 \subsection{The visual system}\label{sec:visual-system}
 
@@ -348,25 +362,54 @@ independent components of natural image sequences give similarly shaped filters,
 supporting the hypothesis that the simple cell receptive fields are tuned to
 encode natural images well~\cite{strf}.
 
-\section{Natural image statistics}\label{sec:natstat}
+\section{Algorithmic complexity of natural images}\label{sec:graphics}
 
-Images of the natural world are easily distinguishable from man-made images or
-random noise. This difference is reflected in the statistical structure of
-natural images, and is generally robust across variations in subject matter or
-lighting. For example, the power spectrum of a natural image (averaged over
-orientations), scales like $k^{-2 + \eta}$, where $k$ is the spatial frequency
-and $\eta$ is small. This and the other statistics discussed in~\cite{ruderman}
-establish that natural images are approximately \emph{scale-invariant}. The
-scale invariance of natural images is mostly explained by
-occlusion~\cite{dead-leaves}. Different objects appear to be different sizes and
-occlude one another, causing an image to depict multiple scales. However, the
-scale invariance of a natural image may also reflect the scale invariance of
-objects it depicts: nature is full of fractals~\cite{fractals-everywhere}.
+The computer renderings of natural scenes that are widely used in media can be
+convincing to the eye without needing to simulate or model the scene at a
+physical level of detail. The low algorithmic complexity of a rendering
+reflects the low algorithmic complexity of aspects of a natural scene. In
+computer graphics, one usually manipulates the \emph{geometry} of objects and
+the \emph{textures} drawn on the geometry. Both of these aspects of a model can
+have low complexities.
+
+\subsection{Geometry}
+
+While most geometry in a scene is manually modeled, some natural objects like
+trees can be generated algorithmically. The first comprehensive approach was
+through the \emph{Lindenmayer systems} studied in \textit{The Algorithmic Beauty
+of Plants}~\cite{lindenmayer}. This and other techniques are used in the
+commercial \emph{SpeedTree} software package, which is widely used for movies
+and video games~\cite{speedtree}. Another technique is to use naturalistic
+power-law noise to generate terrain and other structures. The most common
+implementation is to combine band-limited noise at different scales, where the
+noise is either Perlin or simplex noise~\cite{perlin}.
+
+\subsection{Texture}
+
+Realistic textures may also be synthesized from noise, and further improvement
+in realism is found from applying nonlinear transformations and turbulence to a
+noise texture~\cite{perlin, hypertexture}. Repeating patterns like tile or
+weaves are also simple to generate.
+
+\subsection{Fractals: between geometry and texture}
+
+More aspects of the natural world may be described by fractals. A more detailed
+account of these ideas and how they relate to natural images may be found in
+\textit{The Science of Fractal Images}~\cite{scifract}. An application of these
+ideas is the use of \emph{iterated function systems} (\textsc{ifs}es) to
+compress natural images by taking advantage of their
+self-similarity~\cite[p.~228]{scifract}. This technique can achieve compression
+ratios that are superior to those of common formats like \textsc{jpeg}, at the
+cost of being asymmetric. Compression by finding an \textsc{ifs} representation
+can take a long time, but the decompression by simulating the \textsc{ifs} is
+fast.
 
 \section{An ensemble of images}\label{sec:wl}
 
-TODO:\@ Introduce idea and reorient supporting text towards the \emph{ensemble
-of different images} rather than towards error and ``lost information.''
+We now neglect the spatial structure of natural image statistics and consider
+digital images as collections of pixels. We would like to know the information needed to
+specify a modification or fluctuation of the pixel values, given that the magnitude of the
+modification is approximately known.
 
 \subsection{Theory}\label{sec:wl-theory}
 
@@ -404,10 +447,11 @@ of different images} rather than towards error and ``lost information.''
 Given a base image $A$ with $N$ pixels which take integer gray values $1 \leq
 a_i \leq M$, we define the \emph{energy} of a different image $B$ with gray
 values $1 \leq b_i \leq M$ as
-\[
+\begin{equation}
   E_A(B)
   = \sum_{i=1}^N \abs{a_i - b_i},
-\]
+  \label{eq:energy}
+\end{equation}
 as depicted in Fig.~\ref{fig:image-levels}.
 
 We would like to consider all possible modified images, but focus on images with
@@ -434,7 +478,7 @@ For the case where the base image is all black ($a_i = 1$) or all white ($a_i =
 M$), we may explicitly count that the density of states
 is~(Theorem~\ref{thm:bw-g})
 \begin{equation}
-  g(E)
+  g(E;\, N,\, M)
   = \sum_k {(-1)}^k \binom{N}{k} \binom{N + E - Mk - 1}{E - Mk}.
   \label{eq:bw-g}
 \end{equation}
@@ -510,7 +554,7 @@ expected error characteristics.
 We now consider the desired calculation of the entropy for random grayscale
 images. The WL densities of states for \num{1024} random grayscale images is
 given in Fig.~\ref{fig:wl-gray}. The corresponding entropies
-(Fig.~\ref{fig:wl-gray-S}) represent the lost information that we seek. The
+(Fig.~\ref{fig:wl-gray-S}) represent the information that we seek. The
 entropies for different grayscale images are similar, since the local energy
 landscapes for gray pixels are close to the same. The entropy for a black image
 is lower than for a grayscale image by almost \SI{1}{bit}, which reflects that
@@ -523,60 +567,260 @@ thermodynamic limit of large $N$ and $M$.
 
 \subsection{Discussion}\label{sec:wl-discussion}
 
-Now that we have computed the lost information as the entropy of a fluctuating
-grayscale image, what can we learn from it? The immediate answer is nothing,
-since an empirical determination of the average energy $E$ where the difference
-between images is barely noticeable is required. However, given such a
-prescription, we may regard our results as an approximation to the information
+Now that we have computed the modification information as the entropy of a
+fluctuating grayscale image, what can we learn from it? If we consider the
+fluctuations as noise, we need a psychophysical threshold of the average energy
+$E$ where the difference between images is barely noticeable. This is possible,
+but requires adjustment of the metric of energy to suit the Weber-Fechner
+law~\cite{jnd}. This was not done, since using the absolute
+deviation~\eqref{eq:energy} as the energy is simpler to interpret. We may at
+least regard the present results as an approximate measure of the information
 lost in visual perception.
 
-The greatest limitation of this approximation is of course the use of a digital
-image instead of considering the light impinging on the retina. The pixels in an
-image may be considered as averages of the true continuous intensity over a
-small solid angle. However, considering a static grid of pixels in a digital
-image differs from our foveated imaging process, which features multiple
-saccades around a scene to refine points of interest.
+A limitation of this measure is the use of a digital image instead of
+considering the light impinging on the retina as discussed in
+Sec.~\ref{sec:vision}. The pixels in an image may be considered as averages of
+the true continuous intensity over a small solid angle. Considering a static
+grid of pixels in a digital image differs from our foveated imaging process,
+which features multiple saccades around a scene to refine points of interest.
+This aspect of the issue has previously been addressed by another maximum
+entropy method which finds optimally informative fixations based on
+contrast~\cite{contrast-entropy}.
 
-Another issue is the arbitrary number of values $M$ for the number of gray
+Whether the fluctuations are due to noise or varying the scene, the density of
+states found in Fig.~\ref{fig:wl-gray} may be used to determine the distribution
+of fluctuating values at a single pixel. As indicated by
+Fig.~\ref{fig:wl-gray-ES}, even a tiny $4 \times 4$ image has a canonical
+entropy similar to the log density of states. Any typical image with thousands
+of pixels and hundreds of gray values may be considered in the thermodynamic
+limit. In this limit, the distribution of energy for the single pixel $j$ may be
+evaluated in the microcanonical ensemble as
+\[
+  P(E_j \mathbin{|} E)
+  = \frac{g(E - E_j;\, N - 1,\, M)}{g(E;\, N,\, M)}
+  \approx \frac{g(E - E_j;\, N,\, M)}{g(E;\, N,\, M)}.
+\]
+For small fluctuations, $E$ is small and $E_j \leq E$ lies on the initial linear
+region of the log density of states, no matter the other gray values. Thus,
+small fluctuations give rise to an exponential distribution of energies, which
+means a Laplacian distribution of gray pixel values. As the total energy $E$
+grows towards the maximum density ($T \to \infty$), the Laplacian peak of pixel
+values flattens out and increases in entropy.
+
+The final issue is the arbitrary number of values $M$ for the number of gray
 values, which affects the entropy value. The simplest solution is to instead
 consider the intensive quantity $\flatfrac{S}{\lg M}$, but it is unclear how to
 best generalize this to the case of color, where discretizations of different
 color spaces may produce different results. This problem of color is avoided in
 the case of scotopic (night) vision.
 
-Despite these issues, the model of fluctuating pixel values serves as a simple
-idealized system that is computationally tractable. This allows us to precisely
-specify the problem at hand and begin to work towards a solution.
-
 \section{Color and choice of coordinates}\label{sec:color}
 
-TODO.
+The ensemble perspective on images differs from the entropy of statistical
+physics in the continuous case. The conjugate nature of position and momentum in
+phase space make the thermodynamic differential entropy~\eqref{eq:differential-entropy}
+invariant under a canonical coordinate transformation, but this is not so for
+color spaces~\cite{diffvar}.
 
-\section{Algorithmic complexity of natural images}\label{sec:graphics}
+\subsection{Color spaces}
 
-TODO.
+Colors may be represented independently from how they are produced with the
+various \emph{\textsc{cie} color spaces}~\cite{cie}. These representations are
+ultimately derived from the spectral sensitivities of the different human
+\emph{cone cells} which detect colors. The endeavors of the \textsc{cie}
+(International Commission on Illumination) have resulted in perceptually-uniform
+color spaces like the \textsc{cielab} and \textsc{cieluv} color spaces. Instead
+of representing colors as (scaled) \textsc{rgb} values that control hardware
+pixels, the \textsc{cie} color spaces use different parameters like the
+lightness, chromaticity, and hue coordinates of the \textsc{cielch} space (the
+cylindrical version of \textsc{cieluv}). These spaces aim to be scaled so that
+the Euclidean distance between the coordinates of two colors captures the
+perceptual difference between them. A small enough ball around a color will
+contain all colors that are perceptually indistinguishable in the sense of the
+just-noticeable difference~\cite{jnd}. This is the kind of perceptual energy
+metric that we would like to use in the ensemble perspective, but we are
+confronted with the problem of enforcing an arbitrary discretization of the
+color space.
+
+\subsection{Choice of coordinates}
+
+Instead of choosing an arbitrary discretization, we propose a relative notion of
+information from coordinates which may guide the choice of discretization. As a
+motivating example, consider drawing a dot on a ruler. To guess where the dot
+is, one would rather know what the ruler reads at the dot location, rather than
+the position of the dot along the short side of the ruler. We aim to capture the
+sense in which the short side is less informative than the ruled side.
+
+Consider coordinates $x_1,\, \ldots,\, x_m$ for $\RR^m$. An example would be the
+spherical coordinates $r,\, \theta,\, \phi$ for $\RR^3$. In terms of probability
+distributions, the dot is a distribution which places most of the probability
+near a single location. In general, we consider relative coordinate information
+for locating points by an arbitrary \emph{target} distribution $p$ on the
+coordinates. The usual perspective of independent coordinates as being equally
+important is taken as a reference, which we describe with a uniform distribution
+$p_u$.
+\begin{defn*}
+  The \emph{relative information of coordinate $i$} about a target distribution
+  $p$ is defined as
+  \begin{equation}
+    I(x_i)
+    = \frac{D_{KL}(p(x_i) \mathbin\| p_u(x_i))}{%
+    {D_{KL}(p(x_1,\, \ldots,\, x_m) \mathbin\| p_u(x_1,\, \ldots,\, x_m))}}.
+    \label{eq:relinfo}
+  \end{equation}
+\end{defn*}
+We give two simple examples to demonstrate the calculation of the relative
+coordinate information.
+
+\subsubsection{Which edge of a ruler is best?}
+
+The different sides of a ruler define Cartesian coordinates on a rectangle. Let
+the short side have length $a$ and the ruled side have length $b$. The target
+distribution is a uniform distribution on square of side length $c \leq a$
+within the ruler. With the coordinates $0 \leq x \leq a$ and $0 \leq y \leq b$,
+the uniform reference distribution is $p_u(x,\, y) = {(ab)}^{-1}$ and the target
+distribution is $p(x,\, y) = c^{-2} [0 \leq x \leq c,\, 0 \leq y \leq c]$, where
+$[P]$ is 1 if $P$ is true and $0$ otherwise. From~\eqref{eq:kl-divergence}
+and~\eqref{eq:relinfo} we compute that
+\begin{align}
+  I(x)
+  &= \frac{\log(a/c)}{\log(a/c) + \log(b/c)} \qand \\
+  I(y)
+  &= \frac{\log(b/c)}{\log(a/c) + \log(b/c)}.
+\end{align}
+Since the coordinates are independent, $I(x) + I(y) = 1$. We check that the
+extreme cases are intuitive. For $c = a$, $I(x) = 0$ and $I(y) = 1$, which is
+that all the information is held by the coordinate $y$. This is expected since
+the $x$-coordinate is irrelevant for locating a point when $c = a$. As $c \to
+0$, $I(x)$ and $I(y)$ tend to $1/2$. In this limit, we see that both coordinates
+become equally informative for locating a single point.
+
+\subsubsection{The sphere}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.8\linewidth]{trunc-norm-ball-kldiv}
+  \caption{The KL divergence from uniform to truncated normal as a function of
+  ball radius.}\label{fig:trunc-norm-ball-kldiv}
+\end{figure}
+
+We may also consider relative coordinate information for coordinate systems with
+nontrivial Jacobians, like spherical coordinates. That is, the uniform
+distribution on a sphere of radius $R$ in Cartesian coordinates is
+\[
+  p_u(x,\, y,\, z)
+  = \frac{3}{4\pi R^3},
+\]
+but on spherical coordinates pulls back to
+\[
+  p_u(r,\, \theta,\, \varphi)
+  = \frac{3r^2 \sin\theta}{4\pi R^3}.
+\]
+The spherical coordinates form independent random variables with marginal
+distributions
+\[
+  p_u(r)
+  = \frac{3r^2}{R^3} \qc
+  p_u(\theta)
+  = \frac{\sin\theta}{2}, \qand
+  p_u(\varphi)
+  = \frac{1}{2\pi},
+\]
+whereas the Cartesian coordinates form dependent random variables with
+conditional distributions
+\[
+  p_u(x_i \mathbin{|} x_{j \ne i})
+  = \frac{1}{2}{\qty(R^2 - \sum_{j \ne i} x_j^2)}^{-1/2}
+  \qq{($i,\, j = 1,\, 2,\, 3$).}
+\]
+Similarly, the truncated normal distribution with unit variance on the ball
+pulls back in spherical coordinates to
+\[
+  p(r,\, \theta,\, \varphi)
+  = {\qty[\mathop{\mathrm{erf}}\qty(\frac{R}{\sqrt{2}})
+  - R\sqrt{\frac{2}{\pi}}e^{-R^2 / 2}]}^{-1}
+  \frac{e^{-r^2 / 2}}{\sqrt{8\pi^3}}\, r^2 \sin\theta.
+\]
+We take the truncated normal as our target distribution. While $p(\theta) =
+p_u(\theta)$ and $p(\varphi) = p_u(\varphi)$, the marginal distribution of the
+radius is
+\[
+  p(r)
+  = {\qty[\mathop{\mathrm{erf}}\qty(\frac{R}{\sqrt{2}})
+  - R\sqrt{\frac{2}{\pi}}e^{-R^2 / 2}]}^{-1}
+  \frac{e^{-r^2 / 2}}{\sqrt{2\pi}}\, 2r^2.
+\]
+The KL divergence from the uniform to the truncated normal distribution over the
+ball is
+\[
+  D_{KL}(p \mathbin\| p_u)
+  = \int_{r=0}^R \int_{\theta=0}^\pi \int_{\varphi=0}^{2\pi} p \ln
+  \frac{p}{p_u} \dd{r}\dd{\theta}\dd{\varphi},
+\]
+independent of using spherical coordinates
+(Fig.~\ref{fig:trunc-norm-ball-kldiv}). But since the spherical coordinates form
+independent random variables for both distributions, this separates as
+\begin{align}
+  D_{KL}(p(r,\, \theta,\, \varphi) \mathbin\| p_u(r,\, \theta,\, \varphi))
+  &= D_{KL}(p(r) \mathbin\| p_u(r)) \\
+  &+ D_{KL}(p(\theta) \mathbin\| p_u(\theta)) \\
+  &+ D_{KL}(p(\varphi) \mathbin\| p_u(\varphi)).
+\end{align}
+As only the radial distribution is different,
+\[
+  D_{KL}(p(r,\, \theta,\, \varphi) \mathbin\| p_u(r,\, \theta,\, \varphi))
+  = D_{KL}(p(r) \mathbin\| p_u(r)),
+\]
+as expected from the symmetries. Thus $I(r) = 1$ and $I(\theta) = I(\phi) = 0$.
+This is consistent with the intuition that the radius alone controls the
+probability of a point. Put negatively, knowing angles $\theta$ and $\phi$ for a
+point gives no information about if it is probable.
+
+\subsubsection{Relevance to color spaces}
+
+We have now set up the machinery to compare different coordinates on color
+spaces. Future work could assess the probability distribution on a color space
+from natural images, as in~\cite{natstat-color}, or consider the visible gamut
+of colors as a uniform distribution over a subset of a \textsc{cie} color space.
+A computation of relative coordinate information for a color space with one of
+these two target distributions would indicate which coordinates of the color
+space are perceptually important. For example, we might expect that luminance
+would be important, given the importance of identifying edge contrast in vision.
+The target distributions could also be used to find an optimal entropy coding
+which would reduce the information needed to express natural colors.
 
 \section{Conclusion}
 
-We have described a process for computing the lost information in a fluctuating
-digital image. This simplified model serves as a small step towards knowing how
-much information our eyes can gather from what they are viewing. While this
-model is significantly different from a model of the retina and rest of the
-visual system, the approach taken through information theory and statistical
-physics may prove to be applicable in more complex models.
+The idea of visual complexity has been explored through conventional
+perspectives rooted in natural image statistics, as well as through the new
+perspectives from an image ensemble and relative coordinate information. These
+notions of visual complexity have varied applications to disciplines like
+computer vision, compressive sensing, image compression, and computer graphics.
+Taken together, the different perspectives that we have discussed model much of
+the visual complexity in the natural world in much the same way that the simple
+harmonic oscillator acts as a model for natural phenomena like bobbing in water
+or the swaying of trees.
 
-Looking at lost information also helps to guide a quantitative understanding of
-the qualia we do see. We are able to recognize objects and faces despite varying
-noise, lighting conditions, viewing angles, and other factors. While our model
-has essentially focused on noise, a broader concept of irrelevant information
-could serve as a negative definition of the information gained in viewing an
-object. Such a concept would have strong applications in computer vision, as
-many systems struggle with recognition after simple irrelevant transformations
-like rotation.
+While we have largely considered images as entities in their own right, it
+should be noted that their visual complexity is rooted in the complex phenomena
+of the natural world. Many of the ideas covered here are relevant to
+understanding the complexity of physical laws as well as vision. Thought in
+physics along these lines may be found in proceedings of the Santa Fe
+Institute~\cite{santa-fe} or in P.\ W.\ Anderson's maxim that ``more is
+different''~\cite{anderson}. We may only hope that the enrichment to
+applications in vision embodied by the success of image compression algorithms
+and computer rendering due to understanding visual complexity has an analog in
+physics and other natural sciences.
 
 \section{Acknowledgements}
 
-TODO.
+Most of all, I thank Prof.\ Vincent Meunier for proposing and mentoring the
+project. Our near-daily meetings became highlights of the long days spent inside
+during the summer of \textsc{covid-19}. I also thank Profs. Peter Persans and K.
+V. Lakshmi for all their effort in coordinating an unusual physics \textsc{reu}.
+Funding for this project was provided as a part of the physics research
+experience for undergraduates program of the National Science Foundation at
+Rensselaer Polytechnic Institute.
 
 \appendix
 
@@ -659,8 +903,8 @@ TODO.
 The relevant core of the Wang-Landau algorithm implementation is reproduced
 below. For the full code, see the \textsc{reu} project
 repository~\cite{rpi-reu-notebook}, which includes both the code and a notebook
-of all progress, including other approaches than the one described in this
-report.
+of all progress, including some other approaches to visual complexity than those
+described in this report.
 
 \inputminted{python}{wanglandau-core.py}
 
