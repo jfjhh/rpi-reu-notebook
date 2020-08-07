@@ -17,7 +17,7 @@
 % \patchcmd{\section}{\sffamily}{\bfseries}{}{}
 % \makeatother
 
-\usepackage[semibold]{libertine} % a bit lighter than Times--no osf in math
+\usepackage[semibold,osf]{libertine} % a bit lighter than Times--no osf in math
 \usepackage[libertine,vvarbb]{newtxmath}
 \usepackage[scr=esstix,cal=boondoxo]{mathalfa}
 \usepackage{bm} % load after all math to give access to bold math
@@ -193,7 +193,7 @@ should satisfy intuitive axioms:
     = I(x) + I(y)$.
 \end{itemize}
 
-Given these axioms, the only solution is the
+Given these axioms, the only reasonable solution is the
 \emph{self-information}~(Theorem~\ref{thm:self-information})
 \begin{equation}
   I(x)
@@ -242,7 +242,7 @@ thermodynamic state variable for temperature
   \label{eq:gibbs-entropy}
 \end{equation}
 which we may call the \emph{Gibbs entropy}. This connection between information
-theory and statistical physics was developed by E. T. Jaynes to produce the
+theory and statistical physics was developed by E.\ T.\ Jaynes to produce the
 maximum entropy principle (\textsc{MaxEnt})~\cite{jaynes1957information}. We
 would like to make predictions about systems given some macroscopic quantities
 that we observe. To do so, we must assign probabilities to microstates, which we
@@ -285,11 +285,11 @@ For long strings $x$, the constant is insignificant. We may also define the
 \emph{conditional Kolmogorov complexity} $K(x \mathbin{|} l(x))$, where the
 computer already knows the length of $x$.
 
-The generality of Kolmogorov complexity is apparent when we consider stochastic
-processes. Similar to in Sec.~\ref{sec:information-theory}, consider a
-stochastic process $\qty{X_i}$ with the $X_i$ drawn \textsc{iid} from the finite set
-$\mathcal{X}$ with \textsc{pmf} $p(x)$ for $x \in \mathcal{X}$.
-Then~\cite[p.~473]{cover}
+Since we already have a notion of information for random variables, what does
+the Kolmogorov complexity say about stochastic processes? Similar to in
+Sec.~\ref{sec:information-theory}, consider a stochastic process $\qty{X_i}$
+with the $X_i$ drawn \textsc{iid} from the finite set $\mathcal{X}$ with
+\textsc{pmf} $p(x)$ for $x \in \mathcal{X}$. Then~\cite[p.~473]{cover}
 \begin{equation}
   H(X)
   = \lim_{n \to \infty} \frac{1}{n}\ev{K(X^n \mathbin{|} n)}.
@@ -338,7 +338,7 @@ of active research~\cite{light-field}. While our eyes and conventional cameras
 use many photosensitive elements, significant capture of the light field may be
 done with only one intensity-sensitive element. This is simple enough that the
 author previously created a proof of concept \emph{single-pixel camera} for an
-undergraduate laboratory project~\cite{csjlab,single-pixel}. Such a
+undergraduate laboratory project~\cite{csjlab,*single-pixel}. Such a
 \emph{single-pixel camera} and advances in light-field cameras are made feasible
 by a \emph{compressive sensing} technique which leverages the power-law
 statistics of natural images discussed in
@@ -388,7 +388,7 @@ noise is either Perlin or simplex noise~\cite{perlin}.
 
 Realistic textures may also be synthesized from noise, and further improvement
 in realism is found from applying nonlinear transformations and turbulence to a
-noise texture~\cite{perlin, hypertexture}. Repeating patterns like tile or
+noise texture~\cite{perlin,hypertexture}. Repeating patterns like tile or
 weaves are also simple to generate.
 
 \subsection{Fractals: between geometry and texture}
@@ -590,11 +590,11 @@ contrast~\cite{contrast-entropy}.
 Whether the fluctuations are due to noise or varying the scene, the density of
 states found in Fig.~\ref{fig:wl-gray} may be used to determine the distribution
 of fluctuating values at a single pixel. As indicated by
-Fig.~\ref{fig:wl-gray-ES}, even a tiny $4 \times 4$ image has a canonical
-entropy similar to the log density of states. Any typical image with thousands
-of pixels and hundreds of gray values may be considered in the thermodynamic
-limit. In this limit, the distribution of energy for the single pixel $j$ may be
-evaluated in the microcanonical ensemble as
+Fig.~\ref{fig:wl-gray-ES}, even a tiny 4 by 4 image has a canonical entropy
+similar to the log density of states. Any typical image with thousands of pixels
+and hundreds of gray values may be considered in the thermodynamic limit. In
+this limit, the distribution of energy for the single pixel $j$ may be evaluated
+in the microcanonical ensemble as
 \[
   P(E_j \mathbin{|} E)
   = \frac{g(E - E_j;\, N - 1,\, M)}{g(E;\, N,\, M)}
@@ -814,13 +814,15 @@ physics and other natural sciences.
 
 \section{Acknowledgements}
 
+{\small
 Most of all, I thank Prof.\ Vincent Meunier for proposing and mentoring the
 project. Our near-daily meetings became highlights of the long days spent inside
-during the summer of \textsc{covid-19}. I also thank Profs. Peter Persans and K.
-V. Lakshmi for all their effort in coordinating an unusual physics \textsc{reu}.
-Funding for this project was provided as a part of the physics research
-experience for undergraduates program of the National Science Foundation at
-Rensselaer Polytechnic Institute.
+during the summer of \textsc{covid-19}. I also thank Profs.\ Peter Persans and
+K.\ V.\ Lakshmi for all their effort in coordinating an unusual physics
+\textsc{reu}. Funding for this project was provided as a part of the physics
+research experience for undergraduates program of the National Science
+Foundation at Rensselaer Polytechnic Institute.
+}
 
 \appendix
 
@@ -909,6 +911,7 @@ described in this report.
 \inputminted{python}{wanglandau-core.py}
 
 \hypersetup{urlcolor=Mahogany}
+\renewcommand*{\bibfont}{\small}
 \bibliography{references}
 
 \end{document}
